@@ -295,7 +295,7 @@ const FeaturedProperty = () => {
         {/* CTA */}
         <div className="text-center mt-12">
           <Link
-            href="/propriedade"
+            href="/propriedade?all=true"
             className="bg-white border-2 border-[#AC761B] text-[#AC761B] px-8 py-3 rounded-lg hover:bg-[#AC761B] hover:text-white font-medium transition-all duration-300 inline-block no-underline"
           >
             Ver Todas as Propriedades

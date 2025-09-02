@@ -1,18 +1,84 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Search, Filter } from "lucide-react";
 import FiltersPopup from "./FiltersPopup";
+import { useRouter } from "next/navigation";
 
-const SearchComponent = () => {
-  const [searchTerm, setSearchTerm] = useState("");
+interface SearchComponentProps {
+  onSearchChange?: (term: string) => void;
+  onFiltersChange?: (filters: any) => void;
+  searchTerm?: string;
+}
+
+const SearchComponent = ({
+  onSearchChange,
+  onFiltersChange,
+  searchTerm = "",
+}: SearchComponentProps) => {
   const [activeTab, setActiveTab] = useState("propriedades");
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [activeFilters, setActiveFilters] = useState({});
+  const [activeFilters, setActiveFilters] = useState<any>({});
+  const [localSearch, setLocalSearch] = useState(searchTerm);
 
-  const handleApplyFilters = (filters) => {
+  const router = useRouter();
+
+  // Debounce quando existe onSearchChange (página de propriedades)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (onSearchChange) {
+        onSearchChange(localSearch);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [localSearch, onSearchChange]);
+
+  const handleApplyFilters = (filters: any) => {
     setActiveFilters(filters);
-    console.log("Filtros aplicados:", filters);
+
+    if (onFiltersChange) {
+      onFiltersChange(filters);
+    } else {
+      // Home → só redireciona se houver filtros ou busca
+      const hasFilters = Object.keys(filters).some(
+        (key) =>
+          filters[key] &&
+          (Array.isArray(filters[key]) ? filters[key].length > 0 : true)
+      );
+
+      if (localSearch.trim() !== "" || hasFilters) {
+        const params = new URLSearchParams();
+        if (localSearch) params.set("q", localSearch);
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value) params.set(key, JSON.stringify(value));
+        });
+        router.push(`/propriedade?${params.toString()}`);
+      }
+    }
+
+    setFiltersOpen(false);
   };
+
+  const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setLocalSearch(value);
+
+    if (!onSearchChange) {
+      // Home → só redireciona se houver texto
+      if (value.trim() !== "") {
+        const params = new URLSearchParams();
+        params.set("q", value);
+        router.push(`/propriedade?${params.toString()}`);
+      }
+    }
+  };
+
+  const hasActiveFilters = Object.keys(activeFilters).some(
+    (key) =>
+      activeFilters[key] &&
+      activeFilters[key] !== "" &&
+      (Array.isArray(activeFilters[key]) ? activeFilters[key].length > 0 : true)
+  );
 
   return (
     <>
@@ -44,25 +110,27 @@ const SearchComponent = () => {
             <input
               type="text"
               placeholder="Buscar bairro, CEP ou cidade"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={localSearch}
+              onChange={handleSearchInput}
               className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#BCB785] focus:border-transparent"
             />
           </div>
+
           <button
-            className="flex items-center gap-2 px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50"
+            className={`flex items-center gap-2 px-6 py-3 border rounded-lg transition-colors ${
+              hasActiveFilters
+                ? "border-[#BCB785] bg-[#BCB785]/10 text-[#BCB785]"
+                : "border-gray-300 hover:bg-gray-50"
+            }`}
             onClick={() => setFiltersOpen(true)}
           >
             <Filter className="w-5 h-5" />
             Filtros
-            {Object.keys(activeFilters).some((key) => activeFilters[key]) && (
-              <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            {hasActiveFilters && (
+              <span className="bg-[#BCB785] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                 !
               </span>
             )}
-          </button>
-          <button className="px-8 py-3 bg-[#AC761B] text-white rounded-lg font-medium">
-            Buscar
           </button>
         </div>
       </div>

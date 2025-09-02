@@ -1,7 +1,19 @@
+"use client";
+
 import React from "react";
 import SearchComponent from "./Search";
 
-const Hero = () => {
+interface HeroProps {
+  onSearchChange?: (term: string) => void;
+  onFiltersChange?: (filters: any) => void;
+  searchTerm?: string;
+}
+
+const Hero: React.FC<HeroProps> = ({
+  onSearchChange,
+  onFiltersChange,
+  searchTerm,
+}) => {
   return (
     <section className="relative min-h-96 flex items-center justify-center overflow-hidden">
       {/* Video Background */}
@@ -18,7 +30,6 @@ const Hero = () => {
 
         {/* Overlay */}
         <div className="absolute inset-0 bg-black/60"></div>
-        {/* 👆 bg-black/60 = preto com 60% de opacidade */}
       </div>
 
       {/* Content */}
@@ -31,7 +42,12 @@ const Hero = () => {
             Encontre o imóvel dos seus sonhos
           </p>
         </div>
-        <SearchComponent />
+
+        <SearchComponent
+          searchTerm={searchTerm || ""}
+          onSearchChange={onSearchChange}
+          onFiltersChange={onFiltersChange}
+        />
       </div>
     </section>
   );
