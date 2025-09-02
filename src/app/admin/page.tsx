@@ -17,15 +17,31 @@ import {
   Loader,
 } from "lucide-react";
 
+// Defina a interface para o objeto de propriedade
+interface Property {
+  id: number;
+  title: string;
+  location: string;
+  price: string;
+  bedrooms: number;
+  bathrooms: number;
+  area: number;
+  images: string[];
+  featured: boolean;
+  description: string;
+  created_at: string;
+}
+
 const PropertyCRUD = () => {
-  const [properties, setProperties] = useState([]);
-  const [currentProperty, setCurrentProperty] = useState(null);
+  // Use a interface para tipar o estado
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [currentProperty, setCurrentProperty] = useState<Property | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("create");
   const [searchTerm, setSearchTerm] = useState("");
-  const [imageFiles, setImageFiles] = useState([]);
-  const [imageUrls, setImageUrls] = useState([]);
-  const [error, setError] = useState(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
 
@@ -38,7 +54,7 @@ const PropertyCRUD = () => {
     area: 0,
     images: [],
     featured: false,
-    description: "", // Novo campo
+    description: "",
   });
 
   // Buscar todas as propriedades
@@ -52,9 +68,10 @@ const PropertyCRUD = () => {
 
       if (error) throw error;
 
-      setProperties(data || []);
+      // Faça a asserção de tipo para garantir que os dados estão no formato correto
+      setProperties((data as Property[]) || []);
       setError(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao buscar propriedades:", error);
       setError("Erro ao carregar propriedades");
     } finally {
@@ -63,7 +80,7 @@ const PropertyCRUD = () => {
   };
 
   // Upload de múltiplas imagens
-  const uploadMultipleImages = async (files) => {
+  const uploadMultipleImages = async (files: File[]) => {
     const uploadPromises = files.map(async (file) => {
       const fileExt = file.name.split(".").pop();
       const fileName = `${Date.now()}-${Math.random()
@@ -88,7 +105,7 @@ const PropertyCRUD = () => {
   };
 
   // Deletar imagem do storage
-  const deleteImage = async (imageUrl) => {
+  const deleteImage = async (imageUrl: string) => {
     try {
       const path = imageUrl.split("/").pop();
       await supabase.storage
@@ -111,7 +128,7 @@ const PropertyCRUD = () => {
   );
 
   // Abrir modal
-  const openModal = (mode, property = null) => {
+  const openModal = (mode: string, property: Property | null = null) => {
     setModalMode(mode);
     setCurrentProperty(property);
     if (property) {
@@ -124,7 +141,7 @@ const PropertyCRUD = () => {
         area: property.area || 0,
         images: property.images || [],
         featured: property.featured || false,
-        description: property.description || "", // Define a descrição ao editar/visualizar
+        description: property.description || "",
       });
       setImageUrls(property.images || []);
     } else {
@@ -137,7 +154,7 @@ const PropertyCRUD = () => {
         area: 0,
         images: [],
         featured: false,
-        description: "", // Inicializa a descrição ao criar
+        description: "",
       });
       setImageUrls([]);
     }
@@ -156,8 +173,14 @@ const PropertyCRUD = () => {
   };
 
   // Handle form input changes
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
+    const { name, value, type } = e.target;
+    const checked =
+      type === "checkbox" ? (e.target as HTMLInputElement).checked : undefined;
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
@@ -165,15 +188,14 @@ const PropertyCRUD = () => {
   };
 
   // Handle image upload
-  const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files);
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files as File[]);
     setImageFiles(files);
   };
 
   // Remove image from preview
-  const removeImage = async (index, isExisting = false) => {
+  const removeImage = async (index: number, isExisting: boolean = false) => {
     if (isExisting) {
-      const imageUrl = imageUrls[index];
       setImageUrls((prev) => prev.filter((_, i) => i !== index));
       setFormData((prev) => ({
         ...prev,
@@ -190,7 +212,6 @@ const PropertyCRUD = () => {
       setLoading(true);
       let finalImageUrls = [...imageUrls];
 
-      // Upload das novas imagens se houver
       if (imageFiles.length > 0) {
         setUploadingImages(true);
         const uploadedUrls = await uploadMultipleImages(imageFiles);
@@ -202,12 +223,12 @@ const PropertyCRUD = () => {
         title: formData.title,
         location: formData.location,
         price: formData.price,
-        bedrooms: parseInt(formData.bedrooms),
-        bathrooms: parseInt(formData.bathrooms),
-        area: parseFloat(formData.area),
+        bedrooms: parseInt(formData.bedrooms.toString()),
+        bathrooms: parseInt(formData.bathrooms.toString()),
+        area: parseFloat(formData.area.toString()),
         images: finalImageUrls,
         featured: formData.featured,
-        description: formData.description, // Adiciona o campo de descrição
+        description: formData.description,
       };
 
       if (modalMode === "create") {
@@ -218,9 +239,8 @@ const PropertyCRUD = () => {
 
         if (error) throw error;
 
-        setProperties((prev) => [data[0], ...prev]);
-      } else if (modalMode === "edit") {
-        // Deletar imagens removidas do storage
+        setProperties((prev) => [data[0] as Property, ...prev]);
+      } else if (modalMode === "edit" && currentProperty) {
         const oldImages = currentProperty.images || [];
         const removedImages = oldImages.filter(
           (img) => !finalImageUrls.includes(img)
@@ -239,13 +259,15 @@ const PropertyCRUD = () => {
         if (error) throw error;
 
         setProperties((prev) =>
-          prev.map((p) => (p.id === currentProperty.id ? data[0] : p))
+          prev.map((p) =>
+            p.id === currentProperty.id ? (data[0] as Property) : p
+          )
         );
       }
 
       closeModal();
       setError(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao salvar propriedade:", error);
       setError("Erro ao salvar propriedade: " + error.message);
     } finally {
@@ -255,7 +277,7 @@ const PropertyCRUD = () => {
   };
 
   // Delete property
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: number) => {
     if (!window.confirm("Tem certeza que deseja deletar esta propriedade?")) {
       return;
     }
@@ -277,7 +299,7 @@ const PropertyCRUD = () => {
 
       setProperties((prev) => prev.filter((p) => p.id !== id));
       setError(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao deletar propriedade:", error);
       setError("Erro ao deletar propriedade: " + error.message);
     } finally {
@@ -309,10 +331,10 @@ const PropertyCRUD = () => {
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium transition-colors disabled:opacity-50"
               style={{ backgroundColor: "#8B7355" }}
               onMouseOver={(e) =>
-                !loading && (e.target.style.backgroundColor = "#7A6148")
+                !loading && (e.currentTarget.style.backgroundColor = "#7A6148")
               }
               onMouseOut={(e) =>
-                !loading && (e.target.style.backgroundColor = "#8B7355")
+                !loading && (e.currentTarget.style.backgroundColor = "#8B7355")
               }
             >
               <Plus size={20} />
@@ -418,12 +440,10 @@ const PropertyCRUD = () => {
                   <h3 className="font-semibold text-lg text-gray-800 mb-2">
                     {property.title}
                   </h3>
-
                   <div className="flex items-center gap-1 text-gray-600 mb-3">
                     <MapPin size={14} />
                     <span className="text-sm">{property.location}</span>
                   </div>
-
                   <div className="flex items-center justify-between mb-4">
                     <span
                       className="text-xl font-bold"
@@ -432,7 +452,6 @@ const PropertyCRUD = () => {
                       {property.price}
                     </span>
                   </div>
-
                   <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
                     <div className="flex items-center gap-1">
                       <Bed size={14} />
@@ -463,10 +482,10 @@ const PropertyCRUD = () => {
                       className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-white text-sm font-medium transition-colors"
                       style={{ backgroundColor: "#8B7355" }}
                       onMouseOver={(e) =>
-                        (e.target.style.backgroundColor = "#7A6148")
+                        (e.currentTarget.style.backgroundColor = "#7A6148")
                       }
                       onMouseOut={(e) =>
-                        (e.target.style.backgroundColor = "#8B7355")
+                        (e.currentTarget.style.backgroundColor = "#8B7355")
                       }
                     >
                       <Edit2 size={16} />
@@ -820,10 +839,12 @@ const PropertyCRUD = () => {
                     className="flex-1 px-4 py-2 rounded-lg text-white font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                     style={{ backgroundColor: "#8B7355" }}
                     onMouseOver={(e) =>
-                      !loading && (e.target.style.backgroundColor = "#7A6148")
+                      !loading &&
+                      (e.currentTarget.style.backgroundColor = "#7A6148")
                     }
                     onMouseOut={(e) =>
-                      !loading && (e.target.style.backgroundColor = "#8B7355")
+                      !loading &&
+                      (e.currentTarget.style.backgroundColor = "#8B7355")
                     }
                   >
                     {loading && <Loader className="animate-spin" size={16} />}
