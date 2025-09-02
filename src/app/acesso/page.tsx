@@ -39,14 +39,14 @@ const AuthPage = () => {
         data: { user },
       } = await supabase.auth.getUser();
       if (user) {
-        router.push("/admin"); // ou página principal
+        router.push("/admin");
       }
     };
 
     checkUser();
   }, [router]);
 
-  // Limpar mensagens quando trocar de modo
+  // Limpar mensagens ao trocar modo
   useEffect(() => {
     setMessage({ type: "", text: "" });
     setFormData({
@@ -66,9 +66,7 @@ const AuthPage = () => {
       [name]: value,
     }));
 
-    if (message.text) {
-      setMessage({ type: "", text: "" });
-    }
+    if (message.text) setMessage({ type: "", text: "" });
   };
 
   const validateForm = () => {
@@ -132,19 +130,21 @@ const AuthPage = () => {
         text: "Login realizado com sucesso! Redirecionando...",
       });
 
-      setTimeout(() => {
-        router.push("/admin");
-      }, 1500);
-    } catch (error: any) {
+      setTimeout(() => router.push("/admin"), 1500);
+    } catch (error: unknown) {
       console.error("Erro no login:", error);
 
-      if (error.message.includes("Invalid login credentials")) {
-        setMessage({ type: "error", text: "Email ou senha incorretos." });
+      if (error instanceof Error) {
+        if (error.message.includes("Invalid login credentials")) {
+          setMessage({ type: "error", text: "Email ou senha incorretos." });
+        } else {
+          setMessage({
+            type: "error",
+            text: error.message || "Erro ao fazer login.",
+          });
+        }
       } else {
-        setMessage({
-          type: "error",
-          text: error.message || "Erro ao fazer login.",
-        });
+        setMessage({ type: "error", text: "Erro inesperado ao fazer login." });
       }
     } finally {
       setLoading(false);
@@ -173,24 +173,22 @@ const AuthPage = () => {
     } catch (error: unknown) {
       console.error("Erro no cadastro:", error);
 
-     if (error instanceof Error) {
-    if (error.message.includes("User already registered")) {
-      setMessage({ type: "error", text: "Este email já está cadastrado." });
-    } else {
-      setMessage({
-        type: "error",
-        text: error.message || "Erro ao criar conta.",
-      });
+      if (error instanceof Error) {
+        if (error.message.includes("User already registered")) {
+          setMessage({ type: "error", text: "Este email já está cadastrado." });
+        } else {
+          setMessage({
+            type: "error",
+            text: error.message || "Erro ao criar conta.",
+          });
+        }
+      } else {
+        setMessage({ type: "error", text: "Erro inesperado ao criar conta." });
+      }
+    } finally {
+      setLoading(false);
     }
-  } else {
-    setMessage({
-      type: "error",
-      text: "Erro inesperado ao criar conta.",
-    });
-  }
-} finally {
-  setLoading(false);
-}
+  };
 
   const handleForgotPassword = async () => {
     if (!formData.email) {
@@ -206,7 +204,9 @@ const AuthPage = () => {
 
       const { error } = await supabase.auth.resetPasswordForEmail(
         formData.email,
-        { redirectTo: `${window.location.origin}/reset-password` }
+        {
+          redirectTo: `${window.location.origin}/reset-password`,
+        }
       );
 
       if (error) throw error;
