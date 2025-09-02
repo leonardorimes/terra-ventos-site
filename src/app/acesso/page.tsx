@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import {
@@ -58,7 +57,6 @@ const AuthPage = () => {
     });
   }, [isLogin]);
 
-  // ✅ corrigido tipo do evento
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -68,7 +66,6 @@ const AuthPage = () => {
       [name]: value,
     }));
 
-    // Limpar mensagem quando começar a digitar
     if (message.text) {
       setMessage({ type: "", text: "" });
     }
@@ -116,16 +113,14 @@ const AuthPage = () => {
     return true;
   };
 
-  // ✅ corrigido tipo do evento
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     if (!validateForm()) return;
 
     try {
       setLoading(true);
 
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
@@ -156,23 +151,17 @@ const AuthPage = () => {
     }
   };
 
-  // ✅ corrigido tipo do evento
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     if (!validateForm()) return;
 
     try {
       setLoading(true);
 
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
-        options: {
-          data: {
-            full_name: formData.fullName,
-          },
-        },
+        options: { data: { full_name: formData.fullName } },
       });
 
       if (error) throw error;
@@ -181,21 +170,27 @@ const AuthPage = () => {
         type: "success",
         text: "Cadastro realizado! Verifique seu email para confirmar a conta.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Erro no cadastro:", error);
 
-      if (error.message.includes("User already registered")) {
-        setMessage({ type: "error", text: "Este email já está cadastrado." });
-      } else {
-        setMessage({
-          type: "error",
-          text: error.message || "Erro ao criar conta.",
-        });
-      }
-    } finally {
-      setLoading(false);
+     if (error instanceof Error) {
+    if (error.message.includes("User already registered")) {
+      setMessage({ type: "error", text: "Este email já está cadastrado." });
+    } else {
+      setMessage({
+        type: "error",
+        text: error.message || "Erro ao criar conta.",
+      });
     }
-  };
+  } else {
+    setMessage({
+      type: "error",
+      text: "Erro inesperado ao criar conta.",
+    });
+  }
+} finally {
+  setLoading(false);
+}
 
   const handleForgotPassword = async () => {
     if (!formData.email) {
@@ -211,9 +206,7 @@ const AuthPage = () => {
 
       const { error } = await supabase.auth.resetPasswordForEmail(
         formData.email,
-        {
-          redirectTo: `${window.location.origin}/reset-password`,
-        }
+        { redirectTo: `${window.location.origin}/reset-password` }
       );
 
       if (error) throw error;
@@ -234,18 +227,12 @@ const AuthPage = () => {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8"
-      style={{ backgroundColor: "#F5F2ED" }}
-    >
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-[#F5F2ED]">
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
           <div className="flex justify-center mb-6">
-            <div
-              className="p-3 rounded-full"
-              style={{ backgroundColor: "#8B7355" }}
-            >
+            <div className="p-3 rounded-full bg-[#8B7355]">
               <Home className="h-8 w-8 text-white" />
             </div>
           </div>
@@ -256,10 +243,7 @@ const AuthPage = () => {
         </div>
 
         {/* Form */}
-        <div
-          className="bg-white rounded-xl shadow-lg p-8 border"
-          style={{ borderColor: "#E0D9CF" }}
-        >
+        <div className="bg-white rounded-xl shadow-lg p-8 border border-[#E0D9CF]">
           {/* Message Alert */}
           {message.text && (
             <div
@@ -282,32 +266,22 @@ const AuthPage = () => {
             className="space-y-6"
             onSubmit={isLogin ? handleLogin : handleSignUp}
           >
-            {/* Full Name - Only for Sign Up */}
+            {/* Full Name */}
             {!isLogin && (
               <div>
-                <label
-                  htmlFor="fullName"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Nome Completo *
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
-                  </div>
+                  <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                   <input
-                    id="fullName"
                     name="fullName"
                     type="text"
                     value={formData.fullName}
                     onChange={handleInputChange}
                     disabled={loading}
-                    className="w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-opacity-50 disabled:bg-gray-100 disabled:opacity-50"
-                    style={{
-                      borderColor: "#D4CCC0",
-                      focusRingColor: "#8B7355",
-                    }}
                     placeholder="Seu nome completo"
+                    className="w-full pl-10 pr-3 py-2 border rounded-lg border-[#D4CCC0] focus:ring-2 focus:ring-[#8B7355] focus:border-[#8B7355] disabled:bg-gray-100 disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -315,118 +289,84 @@ const AuthPage = () => {
 
             {/* Email */}
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Email *
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
+                <Mail className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                 <input
-                  id="email"
                   name="email"
                   type="email"
                   value={formData.email}
                   onChange={handleInputChange}
                   disabled={loading}
-                  className="w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-opacity-50 disabled:bg-gray-100 disabled:opacity-50"
-                  style={{
-                    borderColor: "#D4CCC0",
-                    focusRingColor: "#8B7355",
-                  }}
                   placeholder="seu@email.com"
+                  className="w-full pl-10 pr-3 py-2 border rounded-lg border-[#D4CCC0] focus:ring-2 focus:ring-[#8B7355] focus:border-[#8B7355] disabled:bg-gray-100 disabled:opacity-50"
                 />
               </div>
             </div>
 
             {/* Password */}
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Senha *
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
+                <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                 <input
-                  id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
                   value={formData.password}
                   onChange={handleInputChange}
                   disabled={loading}
-                  className="w-full pl-10 pr-12 py-2 border rounded-lg focus:ring-2 focus:ring-opacity-50 disabled:bg-gray-100 disabled:opacity-50"
-                  style={{
-                    borderColor: "#D4CCC0",
-                    focusRingColor: "#8B7355",
-                  }}
                   placeholder="Sua senha"
+                  className="w-full pl-10 pr-12 py-2 border rounded-lg border-[#D4CCC0] focus:ring-2 focus:ring-[#8B7355] focus:border-[#8B7355] disabled:bg-gray-100 disabled:opacity-50"
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={loading}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  )}
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
             </div>
 
-            {/* Confirm Password - Only for Sign Up */}
+            {/* Confirm Password */}
             {!isLogin && (
               <div>
-                <label
-                  htmlFor="confirmPassword"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Confirmar Senha *
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" />
-                  </div>
+                  <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                   <input
-                    id="confirmPassword"
                     name="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
                     disabled={loading}
-                    className="w-full pl-10 pr-12 py-2 border rounded-lg focus:ring-2 focus:ring-opacity-50 disabled:bg-gray-100 disabled:opacity-50"
-                    style={{
-                      borderColor: "#D4CCC0",
-                      focusRingColor: "#8B7355",
-                    }}
                     placeholder="Confirme sua senha"
+                    className="w-full pl-10 pr-12 py-2 border rounded-lg border-[#D4CCC0] focus:ring-2 focus:ring-[#8B7355] focus:border-[#8B7355] disabled:bg-gray-100 disabled:opacity-50"
                   />
                   <button
                     type="button"
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     disabled={loading}
                   >
                     {showConfirmPassword ? (
-                      <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      <EyeOff size={20} />
                     ) : (
-                      <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      <Eye size={20} />
                     )}
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Forgot Password Link - Only for Login */}
+            {/* Forgot Password */}
             {isLogin && (
               <div className="flex justify-end">
                 <button
@@ -440,25 +380,12 @@ const AuthPage = () => {
               </div>
             )}
 
-            {/* Submit Button */}
+            {/* Submit */}
             <div>
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                style={{
-                  backgroundColor: "#8B7355",
-                  focusRingColor: "#8B7355",
-                }}
-                // ✅ corrigido tipo do evento
-                onMouseOver={(e: React.MouseEvent<HTMLButtonElement>) =>
-                  !loading &&
-                  (e.currentTarget.style.backgroundColor = "#7A6148")
-                }
-                onMouseOut={(e: React.MouseEvent<HTMLButtonElement>) =>
-                  !loading &&
-                  (e.currentTarget.style.backgroundColor = "#8B7355")
-                }
+                className="w-full py-2 px-4 rounded-lg text-white font-medium bg-[#8B7355] hover:bg-[#7A6148] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#8B7355] transition disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
               >
                 {loading && (
                   <Loader className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
@@ -472,44 +399,31 @@ const AuthPage = () => {
             </div>
           </form>
 
-          {/* Toggle Login/SignUp */}
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div
-                  className="w-full border-t"
-                  style={{ borderColor: "#E0D9CF" }}
-                />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">ou</span>
-              </div>
+          {/* Toggle */}
+          <div className="mt-6 text-center">
+            <div className="relative flex items-center justify-center">
+              <span className="px-2 bg-white text-gray-500">ou</span>
             </div>
-
-            <div className="mt-6 text-center">
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                disabled={loading}
-                className="text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50"
-              >
-                {isLogin ? (
-                  <>
-                    Não tem uma conta?{" "}
-                    <span className="font-medium" style={{ color: "#8B7355" }}>
-                      Cadastre-se
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    Já tem uma conta?{" "}
-                    <span className="font-medium" style={{ color: "#8B7355" }}>
-                      Faça login
-                    </span>
-                  </>
-                )}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setIsLogin(!isLogin)}
+              disabled={loading}
+              className="mt-4 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50"
+            >
+              {isLogin ? (
+                <>
+                  Não tem uma conta?{" "}
+                  <span className="font-medium text-[#8B7355]">
+                    Cadastre-se
+                  </span>
+                </>
+              ) : (
+                <>
+                  Já tem uma conta?{" "}
+                  <span className="font-medium text-[#8B7355]">Faça login</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
 

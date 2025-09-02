@@ -40,9 +40,6 @@ export default function PropertiesPage() {
         return (
           property.title?.toLowerCase().includes(searchLower) ||
           property.location?.toLowerCase().includes(searchLower) ||
-          property.neighborhood?.toLowerCase().includes(searchLower) ||
-          property.city?.toLowerCase().includes(searchLower) ||
-          property.zipcode?.toLowerCase().includes(searchLower) ||
           property.description?.toLowerCase().includes(searchLower)
         );
       });
