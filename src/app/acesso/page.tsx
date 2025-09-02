@@ -21,7 +21,10 @@ const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [message, setMessage] = useState({ type: "", text: "" });
+  const [message, setMessage] = useState<{ type: string; text: string }>({
+    type: "",
+    text: "",
+  });
 
   const [formData, setFormData] = useState({
     email: "",
@@ -55,7 +58,10 @@ const AuthPage = () => {
     });
   }, [isLogin]);
 
-  const handleInputChange = (e) => {
+  // ✅ corrigido tipo do evento
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -110,7 +116,8 @@ const AuthPage = () => {
     return true;
   };
 
-  const handleLogin = async (e) => {
+  // ✅ corrigido tipo do evento
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!validateForm()) return;
@@ -133,7 +140,7 @@ const AuthPage = () => {
       setTimeout(() => {
         router.push("/admin");
       }, 1500);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro no login:", error);
 
       if (error.message.includes("Invalid login credentials")) {
@@ -149,7 +156,8 @@ const AuthPage = () => {
     }
   };
 
-  const handleSignUp = async (e) => {
+  // ✅ corrigido tipo do evento
+  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!validateForm()) return;
@@ -173,7 +181,7 @@ const AuthPage = () => {
         type: "success",
         text: "Cadastro realizado! Verifique seu email para confirmar a conta.",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro no cadastro:", error);
 
       if (error.message.includes("User already registered")) {
@@ -442,11 +450,14 @@ const AuthPage = () => {
                   backgroundColor: "#8B7355",
                   focusRingColor: "#8B7355",
                 }}
-                onMouseOver={(e) =>
-                  !loading && (e.target.style.backgroundColor = "#7A6148")
+                // ✅ corrigido tipo do evento
+                onMouseOver={(e: React.MouseEvent<HTMLButtonElement>) =>
+                  !loading &&
+                  (e.currentTarget.style.backgroundColor = "#7A6148")
                 }
-                onMouseOut={(e) =>
-                  !loading && (e.target.style.backgroundColor = "#8B7355")
+                onMouseOut={(e: React.MouseEvent<HTMLButtonElement>) =>
+                  !loading &&
+                  (e.currentTarget.style.backgroundColor = "#8B7355")
                 }
               >
                 {loading && (
