@@ -7,6 +7,19 @@ import { Bed, Bath, Square, Camera } from "lucide-react";
 import { Property } from "@/types/property";
 import Link from "next/link";
 
+export interface PropertyRow {
+  id: string;
+  title: string | null;
+  location: string | null;
+  price: string | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  area: number | null;
+  images: string[] | null;
+  featured: boolean | null;
+  created_at: string;
+}
+
 export default function PropertyList() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,7 +34,7 @@ export default function PropertyList() {
       if (error) {
         console.error("Erro ao carregar propriedades:", error.message);
       } else {
-        const mapped: Property[] = (data || []).map((p: any) => ({
+        const mapped: Property[] = (data || []).map((p: PropertyRow) => ({
           id: p.id,
           title: p.title ?? "Título indisponível",
           location: p.location ?? "Local não informado",
@@ -58,17 +71,14 @@ export default function PropertyList() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
       {properties.map((property) => (
-        <Link href={`/propriedade/${property.id}`}>
-          <div
-            key={property.id}
-            className="bg-white rounded-2xl shadow-md overflow-hidden group hover:shadow-xl transition"
-          >
+        <Link key={property.id} href={`/propriedade/${property.id}`}>
+          <div className="bg-white rounded-2xl shadow-md overflow-hidden group hover:shadow-xl transition">
             {/* Imagem */}
             <div className="relative w-full h-64">
               {property.images.length > 0 ? (
                 <Image
                   src={property.images[0]} // usa a primeira por enquanto
-                  alt={property.title}
+                  alt={property.title || "img"}
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-110"
                 />

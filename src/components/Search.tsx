@@ -1,84 +1,150 @@
 "use client";
-import React, { useState, useEffect } from "react";
+
+import React, { useEffect, useState } from "react";
 import { Search, Filter } from "lucide-react";
 import FiltersPopup from "./FiltersPopup";
 import { useRouter } from "next/navigation";
+import { Filters } from "@/types/filters";
 
 interface SearchComponentProps {
-  onSearchChange?: (term: string) => void;
-  onFiltersChange?: (filters: any) => void;
   searchTerm?: string;
+  onSearchChange?: (term: string) => void;
+  // Alterado o tipo de onFiltersChange para Filters
+  onFiltersChange?: (filters: Filters) => void;
 }
 
-const SearchComponent = ({
+const SearchComponent: React.FC<SearchComponentProps> = ({
+  searchTerm = "",
   onSearchChange,
   onFiltersChange,
-  searchTerm = "",
-}: SearchComponentProps) => {
-  const [activeTab, setActiveTab] = useState("propriedades");
+}) => {
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [activeFilters, setActiveFilters] = useState<any>({});
   const [localSearch, setLocalSearch] = useState(searchTerm);
+  const [activeFilters, setActiveFilters] = useState<Filters>({
+    priceRange: { min: undefined, max: undefined },
+    propertyType: undefined,
+    location: "",
+    bedrooms: undefined,
+    bathrooms: undefined,
+    area: { min: undefined, max: undefined },
+    features: undefined,
+  });
 
   const router = useRouter();
 
-  // Debounce quando existe onSearchChange (página de propriedades)
+  // Debounce para search
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (onSearchChange) {
-        onSearchChange(localSearch);
-      }
+    const timeout = setTimeout(() => {
+      if (onSearchChange) onSearchChange(localSearch);
     }, 300);
-
-    return () => clearTimeout(timeoutId);
+    return () => clearTimeout(timeout);
   }, [localSearch, onSearchChange]);
 
-  const handleApplyFilters = (filters: any) => {
+  // Função para verificar se há algum filtro ativo
+  const hasFilters = () => {
+    const {
+      priceRange,
+      area,
+      features,
+      propertyType,
+      bedrooms,
+      bathrooms,
+      location,
+    } = activeFilters;
+    return (
+      (priceRange?.min !== undefined && priceRange?.min !== null) ||
+      (priceRange?.max !== undefined && priceRange?.max !== null) ||
+      (area?.min !== undefined && area?.min !== null) ||
+      (area?.max !== undefined && area?.max !== null) ||
+      (features?.length && features.length > 0) ||
+      (propertyType !== undefined && propertyType !== "") ||
+      (bedrooms !== undefined && bedrooms !== null) ||
+      (bathrooms !== undefined && bathrooms !== null) ||
+      (location !== "" && location !== undefined)
+    );
+  };
+
+  const handleApplyFilters = (filters: Filters) => {
     setActiveFilters(filters);
 
     if (onFiltersChange) {
       onFiltersChange(filters);
-    } else {
-      // Home → só redireciona se houver filtros ou busca
-      const hasFilters = Object.keys(filters).some(
-        (key) =>
-          filters[key] &&
-          (Array.isArray(filters[key]) ? filters[key].length > 0 : true)
-      );
+    } else if (localSearch || hasFilters()) {
+      const params = new URLSearchParams();
+      if (localSearch) params.set("q", localSearch);
 
-      if (localSearch.trim() !== "" || hasFilters) {
-        const params = new URLSearchParams();
-        if (localSearch) params.set("q", localSearch);
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value) params.set(key, JSON.stringify(value));
-        });
-        router.push(`/propriedade?${params.toString()}`);
-      }
+      // Itera sobre o objeto de filtros para adicionar à URLSearchParams
+      Object.entries(filters).forEach(([key, value]) => {
+        if (key === "priceRange" && value && (value.min || value.max)) {
+          if (value.min) params.set("priceMin", value.min.toString());
+          if (value.max) params.set("priceMax", value.max.toString());
+        } else if (key === "area" && value && (value.min || value.max)) {
+          if (value.min) params.set("areaMin", value.min.toString());
+          if (value.max) params.set("areaMax", value.max.toString());
+        } else if (
+          key === "features" &&
+          Array.isArray(value) &&
+          value.length > 0
+        ) {
+          params.set("features", value.join(","));
+        } else if (value !== undefined && value !== null && value !== "") {
+          params.set(key, String(value));
+        }
+      });
+      router.push(`/propriedade?${params.toString()}`);
     }
 
     setFiltersOpen(false);
   };
 
-  const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setLocalSearch(value);
 
+    // Se não há uma função onSearchChange, atualiza a URL para refletir a busca instantânea
     if (!onSearchChange) {
-      // Home → só redireciona se houver texto
+      const params = new URLSearchParams();
       if (value.trim() !== "") {
-        const params = new URLSearchParams();
         params.set("q", value);
-        router.push(`/propriedade?${params.toString()}`);
       }
+
+      // Mantém os filtros existentes na URL ao buscar
+      Object.entries(activeFilters).forEach(([key, filterValue]) => {
+        if (
+          key === "priceRange" &&
+          filterValue &&
+          (filterValue.min || filterValue.max)
+        ) {
+          if (filterValue.min)
+            params.set("priceMin", filterValue.min.toString());
+          if (filterValue.max)
+            params.set("priceMax", filterValue.max.toString());
+        } else if (
+          key === "area" &&
+          filterValue &&
+          (filterValue.min || filterValue.max)
+        ) {
+          if (filterValue.min)
+            params.set("areaMin", filterValue.min.toString());
+          if (filterValue.max)
+            params.set("areaMax", filterValue.max.toString());
+        } else if (
+          key === "features" &&
+          Array.isArray(filterValue) &&
+          filterValue.length > 0
+        ) {
+          params.set("features", filterValue.join(","));
+        } else if (
+          filterValue !== undefined &&
+          filterValue !== null &&
+          filterValue !== ""
+        ) {
+          params.set(key, String(filterValue));
+        }
+      });
+      router.push(`/propriedade?${params.toString()}`);
     }
   };
-
-  const hasActiveFilters = Object.keys(activeFilters).some(
-    (key) =>
-      activeFilters[key] &&
-      activeFilters[key] !== "" &&
-      (Array.isArray(activeFilters[key]) ? activeFilters[key].length > 0 : true)
-  );
 
   return (
     <>
@@ -86,47 +152,35 @@ const SearchComponent = ({
         isOpen={filtersOpen}
         onClose={() => setFiltersOpen(false)}
         onApplyFilters={handleApplyFilters}
+        initialFilters={activeFilters}
       />
 
       <div className="bg-white rounded-lg shadow-lg p-6 max-w-4xl mx-auto">
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200 mb-6">
-          <button
-            onClick={() => setActiveTab("propriedades")}
-            className={`px-6 py-3 font-medium border-b-2 ${
-              activeTab === "propriedades"
-                ? "border-[#BCB785] text-[#BCB785]"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            Comprar
-          </button>
-        </div>
-
-        {/* Search Bar */}
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Input de Busca */}
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
               placeholder="Buscar bairro, CEP ou cidade"
               value={localSearch}
-              onChange={handleSearchInput}
+              onChange={handleSearchChange}
               className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#BCB785] focus:border-transparent"
             />
           </div>
 
+          {/* Botão de Filtros */}
           <button
+            onClick={() => setFiltersOpen(true)}
             className={`flex items-center gap-2 px-6 py-3 border rounded-lg transition-colors ${
-              hasActiveFilters
+              hasFilters()
                 ? "border-[#BCB785] bg-[#BCB785]/10 text-[#BCB785]"
                 : "border-gray-300 hover:bg-gray-50"
             }`}
-            onClick={() => setFiltersOpen(true)}
           >
             <Filter className="w-5 h-5" />
             Filtros
-            {hasActiveFilters && (
+            {hasFilters() && (
               <span className="bg-[#BCB785] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                 !
               </span>

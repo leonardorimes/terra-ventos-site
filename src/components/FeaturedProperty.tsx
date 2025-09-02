@@ -15,8 +15,15 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import { Property } from "@/types/property";
 
+type FeaturedPropertyType = Property & {
+  processedImages: string[];
+  formattedPrice: string;
+};
+
 const FeaturedProperty = () => {
-  const [featuredProperties, setFeaturedProperties] = useState<any[]>([]);
+  const [featuredProperties, setFeaturedProperties] = useState<
+    FeaturedPropertyType[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

@@ -59,7 +59,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
             )}
             <Image
               src={property.images[0]}
-              alt={property.title}
+              alt={property.title || "img"}
               fill
               className={`object-cover group-hover:scale-105 transition-transform duration-500 ${
                 imageLoaded ? "opacity-100" : "opacity-0"

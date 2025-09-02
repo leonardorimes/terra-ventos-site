@@ -97,7 +97,7 @@ const SimilarPropertyCard = ({
             property.images[0] ||
             "https://via.placeholder.com/300x200?text=Sem+Imagem"
           }
-          alt={property.title}
+          alt={property.title || "img"}
           fill
           className="object-cover"
         />
@@ -293,7 +293,7 @@ export default function PropertyDetailPage({
           <div className="relative rounded-2xl overflow-hidden mb-4 group h-96">
             <Image
               src={mainImage}
-              alt={property.title}
+              alt={property.title || "img"}
               fill
               className="object-cover transition-transform group-hover:scale-105 cursor-pointer"
               priority

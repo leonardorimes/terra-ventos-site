@@ -1,52 +1,40 @@
 "use client";
 
 import { Property } from "@/types/property";
+import { Filters } from "@/types/filters";
 import { useState, useEffect, useMemo } from "react";
 import Hero from "@/components/Hero";
 import PropertyCard from "@/components/PropertyCard";
 import { supabase } from "@/lib/supabaseClient";
 
-interface PriceRangeFilter {
-  min?: number;
-  max?: number;
-}
-interface Filters {
-  priceRange?: PriceRangeFilter;
-  propertyType?: string | string[];
-  bedrooms?: number;
-  bathrooms?: number;
-  area?: { min?: number; max?: number };
-  features?: string[];
-}
-
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filters, setFilters] = useState<Filters>({});
+  const [filters, setFilters] = useState<Filters>({
+    priceRange: { min: undefined, max: undefined },
+    propertyType: undefined,
+    location: "",
+    bedrooms: undefined,
+    bathrooms: undefined,
+    area: { min: undefined, max: undefined },
+    features: undefined,
+  });
 
-  // Buscar todas as propriedades
   useEffect(() => {
     const fetchProperties = async () => {
       setLoading(true);
       const { data, error } = await supabase.from("properties").select("*");
-
-      if (error) {
-        console.error("Erro ao buscar propriedades:", error.message);
-      } else {
-        setProperties(data as Property[]);
-      }
+      if (error) console.error("Erro ao buscar propriedades:", error.message);
+      else setProperties(data as Property[]);
       setLoading(false);
     };
-
     fetchProperties();
   }, []);
 
-  // Função para filtrar propriedades em tempo real
   const filteredProperties = useMemo(() => {
     let filtered = properties;
 
-    // Filtrar por termo de busca
     if (searchTerm.trim()) {
       filtered = filtered.filter((property) => {
         const searchLower = searchTerm.toLowerCase();
@@ -58,17 +46,16 @@ export default function PropertiesPage() {
       });
     }
 
-    // Aplicar filtros adicionais
     if (Object.keys(filters).length > 0) {
-      filtered = filtered.filter((property) => {
-        return Object.entries(filters).every(([key, value]) => {
+      filtered = filtered.filter((property) =>
+        Object.entries(filters).every(([key, value]) => {
           if (!value || (Array.isArray(value) && value.length === 0))
             return true;
 
           switch (key) {
             case "priceRange":
-              const priceFilter = value as PriceRangeFilter;
-              const propertyPrice = parseFloat(property.price || "0"); // converte string para número
+              const priceFilter = value as { min?: number; max?: number };
+              const propertyPrice = parseFloat(property.price || "0");
               if (
                 priceFilter.min !== undefined &&
                 propertyPrice < priceFilter.min
@@ -80,13 +67,10 @@ export default function PropertiesPage() {
               )
                 return false;
               return true;
-
             case "bedrooms":
-              return property.bedrooms >= value;
-
+              return (property.bedrooms ?? 0) >= value;
             case "bathrooms":
-              return property.bathrooms >= value;
-
+              return (property.bathrooms ?? 0) >= value;
             case "area":
               const areaFilter = value as { min?: number; max?: number };
               const propertyArea = Number(property.area || 0);
@@ -95,31 +79,22 @@ export default function PropertiesPage() {
               if (areaFilter.max !== undefined && propertyArea > areaFilter.max)
                 return false;
               return true;
-
             default:
               return true;
           }
-        });
-      });
+        })
+      );
     }
 
     return filtered;
   }, [properties, searchTerm, filters]);
 
-  const handleSearchChange = (term: string) => {
-    setSearchTerm(term);
-  };
-
-  const handleFiltersChange = (newFilters: Filters) => {
-    setFilters(newFilters);
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Hero
-        onSearchChange={handleSearchChange}
-        onFiltersChange={handleFiltersChange}
         searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        onFiltersChange={setFilters}
       />
 
       <main className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-12">
@@ -134,26 +109,6 @@ export default function PropertiesPage() {
           </p>
         </div>
 
-        {/* Results Info */}
-        {(searchTerm || Object.keys(filters).length > 0) && (
-          <div className="mb-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-blue-800">
-              {searchTerm && (
-                <span>
-                  Buscando por: <strong>&quot;{searchTerm}&quot;</strong>
-                </span>
-              )}
-              {searchTerm && Object.keys(filters).length > 0 && (
-                <span> • </span>
-              )}
-              {Object.keys(filters).length > 0 && (
-                <span>{Object.keys(filters).length} filtro(s) aplicado(s)</span>
-              )}
-            </p>
-          </div>
-        )}
-
-        {/* Loading */}
         {loading ? (
           <div className="text-center text-gray-500">
             Carregando propriedades...
@@ -171,7 +126,15 @@ export default function PropertiesPage() {
               <button
                 onClick={() => {
                   setSearchTerm("");
-                  setFilters({});
+                  setFilters({
+                    priceRange: { min: undefined, max: undefined },
+                    propertyType: undefined,
+                    location: "",
+                    bedrooms: undefined,
+                    bathrooms: undefined,
+                    area: { min: undefined, max: undefined },
+                    features: undefined,
+                  });
                 }}
                 className="bg-[#BCB785] text-white px-6 py-2 rounded-lg hover:bg-[#AC761B] transition-colors"
               >
@@ -186,18 +149,6 @@ export default function PropertiesPage() {
             ))}
           </div>
         )}
-
-        {/* Load More Button - só mostra se não há filtros ativos */}
-        {!loading &&
-          filteredProperties.length > 0 &&
-          !searchTerm &&
-          Object.keys(filters).length === 0 && (
-            <div className="text-center mt-12">
-              <button className="bg-gray-900 text-white px-8 py-3 rounded-lg hover:bg-gray-800 transition-colors">
-                Load More Properties
-              </button>
-            </div>
-          )}
       </main>
     </div>
   );

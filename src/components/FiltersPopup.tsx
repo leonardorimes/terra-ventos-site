@@ -1,17 +1,37 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, MapPin, Home, DollarSign } from "lucide-react";
+import { Filters } from "@/types/filters";
 
-const FiltersPopup = ({ isOpen, onClose, onApplyFilters }) => {
-  const [filters, setFilters] = useState({
-    priceMin: "",
-    priceMax: "",
-    bairro: "",
-    tipoImovel: "",
-    tamanhoMin: "",
-    tamanhoMax: "",
-  });
+interface FiltersPopupProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onApplyFilters: (filters: Filters) => void;
+  initialFilters?: Filters;
+}
+
+const FiltersPopup: React.FC<FiltersPopupProps> = ({
+  isOpen,
+  onClose,
+  onApplyFilters,
+  initialFilters,
+}) => {
+  const [filters, setFilters] = useState<Filters>(
+    initialFilters || {
+      priceRange: { min: undefined, max: undefined },
+      propertyType: undefined,
+      location: "",
+      bedrooms: undefined,
+      bathrooms: undefined,
+      area: { min: undefined, max: undefined },
+      features: undefined,
+    }
+  );
+
+  useEffect(() => {
+    if (initialFilters) setFilters(initialFilters);
+  }, [initialFilters]);
 
   const tiposImovel = [
     "Casa",
@@ -21,39 +41,72 @@ const FiltersPopup = ({ isOpen, onClose, onApplyFilters }) => {
     "Rural",
     "Lote Urbano",
   ];
-  const bairros = [
-    "Vila São Francisco",
-    "Tatajuba",
-    "Centro",
-    "Praia da Velha",
-    "Camocim",
-  ];
 
-  const handleFilterChange = (key, value) => {
+  const handlePriceChange = (type: "min" | "max", value: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      priceRange: {
+        ...prev.priceRange,
+        [type]: value ? Number(value) : undefined,
+      },
+    }));
+  };
+
+  const handleAreaChange = (type: "min" | "max", value: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      area: {
+        ...prev.area,
+        [type]: value ? Number(value) : undefined,
+      },
+    }));
+  };
+
+  const handleStringChange = (
+    key: keyof Omit<
+      Filters,
+      "priceRange" | "area" | "bedrooms" | "bathrooms" | "features"
+    >,
+    value: string
+  ) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleApplyFilters = () => {
-    onApplyFilters(filters);
-    onClose();
+  const handleNumberChange = (key: "bedrooms" | "bathrooms", value: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: value ? Number(value) : undefined,
+    }));
   };
+
+  const handleFeaturesChange = (value: string) => {
+    const featuresArray = value
+      .split(",")
+      .map((feature) => feature.trim())
+      .filter((feature) => feature !== "");
+    setFilters((prev) => ({ ...prev, features: featuresArray }));
+  };
+
+  const handleApply = () => onApplyFilters(filters);
 
   const clearFilters = () => {
     setFilters({
-      priceMin: "",
-      priceMax: "",
-      bairro: "",
-      tipoImovel: "",
-      tamanhoMin: "",
-      tamanhoMax: "",
+      priceRange: { min: undefined, max: undefined },
+      propertyType: undefined,
+      location: "",
+      bedrooms: undefined,
+      bathrooms: undefined,
+      area: { min: undefined, max: undefined },
+      features: undefined,
     });
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-96 overflow-y-auto">
+        {/* Header */}
         <div className="flex justify-between items-center p-6 border-b">
           <h2 className="text-xl font-semibold">Filtrar Propriedades</h2>
           <button
@@ -64,7 +117,9 @@ const FiltersPopup = ({ isOpen, onClose, onApplyFilters }) => {
           </button>
         </div>
 
+        {/* Body */}
         <div className="p-6 space-y-6">
+          {/* Preço */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <DollarSign className="inline w-4 h-4 mr-1" />
@@ -74,58 +129,83 @@ const FiltersPopup = ({ isOpen, onClose, onApplyFilters }) => {
               <input
                 type="text"
                 placeholder="Preço mínimo"
-                value={filters.priceMin}
-                onChange={(e) => handleFilterChange("priceMin", e.target.value)}
+                value={filters.priceRange?.min || ""}
+                onChange={(e) => handlePriceChange("min", e.target.value)}
                 className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
               />
               <input
                 type="text"
                 placeholder="Preço máximo"
-                value={filters.priceMax}
-                onChange={(e) => handleFilterChange("priceMax", e.target.value)}
+                value={filters.priceRange?.max || ""}
+                onChange={(e) => handlePriceChange("max", e.target.value)}
                 className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
               />
             </div>
           </div>
 
+          {/* Localização */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <MapPin className="inline w-4 h-4 mr-1" />
-              Bairro
+              Localização
             </label>
-            <select
-              value={filters.bairro}
-              onChange={(e) => handleFilterChange("bairro", e.target.value)}
+            <input
+              type="text"
+              placeholder="Digite o bairro ou cidade"
+              value={filters.location || ""}
+              onChange={(e) => handleStringChange("location", e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
-            >
-              <option value="">Todos os bairros</option>
-              {bairros.map((bairro) => (
-                <option key={bairro} value={bairro}>
-                  {bairro}
-                </option>
-              ))}
-            </select>
+            />
           </div>
 
+          {/* Tipo do imóvel */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <Home className="inline w-4 h-4 mr-1" />
               Tipo do Imóvel
             </label>
             <select
-              value={filters.tipoImovel}
-              onChange={(e) => handleFilterChange("tipoImovel", e.target.value)}
+              value={filters.propertyType || ""}
+              onChange={(e) =>
+                handleStringChange("propertyType", e.target.value)
+              }
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
             >
               <option value="">Todos os tipos</option>
-              {tiposImovel.map((tipo) => (
-                <option key={tipo} value={tipo}>
-                  {tipo}
+              {tiposImovel.map((t) => (
+                <option key={t} value={t}>
+                  {t}
                 </option>
               ))}
             </select>
           </div>
 
+          {/* Quartos e Banheiros */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Quartos e Banheiros
+            </label>
+            <div className="grid grid-cols-2 gap-4">
+              <input
+                type="number"
+                placeholder="Nº de quartos"
+                value={filters.bedrooms || ""}
+                onChange={(e) => handleNumberChange("bedrooms", e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
+              />
+              <input
+                type="number"
+                placeholder="Nº de banheiros"
+                value={filters.bathrooms || ""}
+                onChange={(e) =>
+                  handleNumberChange("bathrooms", e.target.value)
+                }
+                className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
+              />
+            </div>
+          </div>
+
+          {/* Tamanho */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Tamanho (m²)
@@ -134,25 +214,36 @@ const FiltersPopup = ({ isOpen, onClose, onApplyFilters }) => {
               <input
                 type="text"
                 placeholder="Área mínima"
-                value={filters.tamanhoMin}
-                onChange={(e) =>
-                  handleFilterChange("tamanhoMin", e.target.value)
-                }
+                value={filters.area?.min || ""}
+                onChange={(e) => handleAreaChange("min", e.target.value)}
                 className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
               />
               <input
                 type="text"
                 placeholder="Área máxima"
-                value={filters.tamanhoMax}
-                onChange={(e) =>
-                  handleFilterChange("tamanhoMax", e.target.value)
-                }
+                value={filters.area?.max || ""}
+                onChange={(e) => handleAreaChange("max", e.target.value)}
                 className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
               />
             </div>
           </div>
+
+          {/* Recursos / Features */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Recursos (separados por vírgula)
+            </label>
+            <input
+              type="text"
+              placeholder="Ex: Piscina, Churrasqueira, Academia"
+              value={filters.features?.join(", ") || ""}
+              onChange={(e) => handleFeaturesChange(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
+            />
+          </div>
         </div>
 
+        {/* Footer */}
         <div className="flex justify-between items-center p-6 border-t bg-gray-50">
           <button
             onClick={clearFilters}
@@ -168,7 +259,7 @@ const FiltersPopup = ({ isOpen, onClose, onApplyFilters }) => {
               Cancelar
             </button>
             <button
-              onClick={handleApplyFilters}
+              onClick={handleApply}
               className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
             >
               Aplicar Filtros
