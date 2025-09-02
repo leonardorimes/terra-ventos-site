@@ -32,6 +32,18 @@ interface Property {
   created_at: string;
 }
 
+interface PropertyFormData {
+  title: string;
+  location: string;
+  price: string;
+  bedrooms: number;
+  bathrooms: number;
+  area: number;
+  images: string[];
+  featured: boolean;
+  description: string;
+}
+
 const PropertyCRUD = () => {
   // Use a interface para tipar o estado
   const [properties, setProperties] = useState<Property[]>([]);
@@ -45,7 +57,7 @@ const PropertyCRUD = () => {
   const [loading, setLoading] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<PropertyFormData>({
     title: "",
     location: "",
     price: "",
@@ -68,17 +80,27 @@ const PropertyCRUD = () => {
 
       if (error) throw error;
 
-      // Faça a asserção de tipo para garantir que os dados estão no formato correto
-      setProperties((data as Property[]) || []);
+      setProperties(
+        (data as Property[]).map((p) => ({
+          ...p,
+          images: p.images || [],
+        })) || []
+      );
       setError(null);
-    } catch (error: any) {
-      console.error("Erro ao buscar propriedades:", error);
-      setError("Erro ao carregar propriedades");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Erro ao buscar propriedades:", error.message);
+        setError("Erro ao carregar propriedades: " + error.message);
+      } else {
+        console.error("Erro ao buscar propriedades:", error);
+        setError(
+          "Erro ao carregar propriedades: Ocorreu um erro desconhecido."
+        );
+      }
     } finally {
       setLoading(false);
     }
   };
-
   // Upload de múltiplas imagens
   const uploadMultipleImages = async (files: File[]) => {
     const uploadPromises = files.map(async (file) => {
@@ -189,7 +211,7 @@ const PropertyCRUD = () => {
 
   // Handle image upload
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files as File[]);
+    const files = e.target.files ? Array.from(e.target.files) : [];
     setImageFiles(files);
   };
 
@@ -267,9 +289,14 @@ const PropertyCRUD = () => {
 
       closeModal();
       setError(null);
-    } catch (error: any) {
-      console.error("Erro ao salvar propriedade:", error);
-      setError("Erro ao salvar propriedade: " + error.message);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Erro ao salvar propriedade:", error.message);
+        setError("Erro ao salvar propriedade: " + error.message);
+      } else {
+        console.error("Erro ao salvar propriedade:", error);
+        setError("Erro ao salvar propriedade: Ocorreu um erro desconhecido.");
+      }
     } finally {
       setLoading(false);
       setUploadingImages(false);
@@ -287,8 +314,9 @@ const PropertyCRUD = () => {
 
       const property = properties.find((p) => p.id === id);
 
-      if (property?.images?.length > 0) {
-        for (const imageUrl of property.images) {
+      if (property?.images?.length) {
+        const images = property.images || [];
+        for (const imageUrl of images) {
           await deleteImage(imageUrl);
         }
       }
@@ -299,9 +327,14 @@ const PropertyCRUD = () => {
 
       setProperties((prev) => prev.filter((p) => p.id !== id));
       setError(null);
-    } catch (error: any) {
-      console.error("Erro ao deletar propriedade:", error);
-      setError("Erro ao deletar propriedade: " + error.message);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Erro ao deletar propriedade:", error.message);
+        setError("Erro ao deletar propriedade: " + error.message);
+      } else {
+        console.error("Erro ao deletar propriedade:", error);
+        setError("Erro ao deletar propriedade: Ocorreu um erro desconhecido.");
+      }
     } finally {
       setLoading(false);
     }
@@ -364,10 +397,6 @@ const PropertyCRUD = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-opacity-50"
-              style={{
-                borderColor: "#D4CCC0",
-                focusRingColor: "#8B7355",
-              }}
             />
           </div>
           <div className="flex gap-4 text-sm">
@@ -565,10 +594,6 @@ const PropertyCRUD = () => {
                     disabled={modalMode === "view" || loading}
                     required
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-opacity-50 disabled:bg-gray-100"
-                    style={{
-                      borderColor: "#D4CCC0",
-                      focusRingColor: "#8B7355",
-                    }}
                   />
                 </div>
 
@@ -585,10 +610,6 @@ const PropertyCRUD = () => {
                     disabled={modalMode === "view" || loading}
                     required
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-opacity-50 disabled:bg-gray-100"
-                    style={{
-                      borderColor: "#D4CCC0",
-                      focusRingColor: "#8B7355",
-                    }}
                   />
                 </div>
 
@@ -606,10 +627,6 @@ const PropertyCRUD = () => {
                     required
                     placeholder="R$ 500.000"
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-opacity-50 disabled:bg-gray-100"
-                    style={{
-                      borderColor: "#D4CCC0",
-                      focusRingColor: "#8B7355",
-                    }}
                   />
                 </div>
 
@@ -627,10 +644,6 @@ const PropertyCRUD = () => {
                     required
                     min="1"
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-opacity-50 disabled:bg-gray-100"
-                    style={{
-                      borderColor: "#D4CCC0",
-                      focusRingColor: "#8B7355",
-                    }}
                   />
                 </div>
 
@@ -645,10 +658,6 @@ const PropertyCRUD = () => {
                     onChange={handleInputChange}
                     disabled={modalMode === "view" || loading}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-opacity-50 disabled:bg-gray-100"
-                    style={{
-                      borderColor: "#D4CCC0",
-                      focusRingColor: "#8B7355",
-                    }}
                   >
                     {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
                       <option key={num} value={num}>
@@ -669,10 +678,6 @@ const PropertyCRUD = () => {
                     onChange={handleInputChange}
                     disabled={modalMode === "view" || loading}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-opacity-50 disabled:bg-gray-100"
-                    style={{
-                      borderColor: "#D4CCC0",
-                      focusRingColor: "#8B7355",
-                    }}
                   >
                     {[1, 2, 3, 4, 5, 6].map((num) => (
                       <option key={num} value={num}>
@@ -711,10 +716,6 @@ const PropertyCRUD = () => {
                     disabled={modalMode === "view" || loading}
                     rows={4}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-opacity-50 disabled:bg-gray-100"
-                    style={{
-                      borderColor: "#D4CCC0",
-                      focusRingColor: "#8B7355",
-                    }}
                   ></textarea>
                 </div>
 
