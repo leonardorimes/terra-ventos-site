@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 
 const AboutUsSection = () => {
   return (
@@ -24,11 +25,13 @@ const AboutUsSection = () => {
               <h3 className="text-3xl font-light text-red-500 mb-4">exame.</h3>
 
               {/* Professional Photo */}
-              <div className="relative">
-                <img
-                  src="./images/bernardo.png"
+              <div className="relative w-full h-96 rounded-lg overflow-hidden shadow-md">
+                <Image
+                  src="/images/bernardo.png"
                   alt="Bernardo Carvalho Wertheim"
-                  className="w-full h-96 object-cover rounded-lg shadow-md"
+                  fill
+                  className="object-cover"
+                  priority
                 />
               </div>
             </div>

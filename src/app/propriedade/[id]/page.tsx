@@ -2,11 +2,17 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import { Heart, MapPin, Home, Calendar, Loader } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { Property } from "@/types/property";
 
-// Função para calcular tempo transcorrido
+interface PropertyWithExtras extends Property {
+  formattedArea: string;
+  timeAgo: string;
+}
+
+// Funções utilitárias
 const getTimeAgo = (dateString: string) => {
   if (!dateString) return "N/A";
   const date = new Date(dateString);
@@ -19,23 +25,19 @@ const getTimeAgo = (dateString: string) => {
   return `${Math.ceil(diffDays / 30)} meses atrás`;
 };
 
-// Função para formatar preço
-const formatPrice = (priceText: string | null) => {
-  return priceText || "Preço sob consulta";
-};
+const formatPrice = (priceText: string | null) =>
+  priceText || "Preço sob consulta";
 
-// Função para extrair valor numérico do preço
 const extractPriceValue = (priceText: string | null): number => {
   if (!priceText) return 0;
   const numericValue = priceText.replace(/[^\d.]/g, "");
   return parseFloat(numericValue) || 0;
 };
 
-// Função para buscar propriedades similares
 const fetchSimilarProperties = async (
   currentPrice: string | null,
   currentId: string
-): Promise<Property[]> => {
+): Promise<PropertyWithExtras[]> => {
   try {
     const currentPriceValue = extractPriceValue(currentPrice);
     if (currentPriceValue === 0) return [];
@@ -82,17 +84,22 @@ const fetchSimilarProperties = async (
 };
 
 // Componente para card de propriedade similar
-const SimilarPropertyCard = ({ property }: { property: Property }) => {
+const SimilarPropertyCard = ({
+  property,
+}: {
+  property: PropertyWithExtras;
+}) => {
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow">
-      <div className="relative">
-        <img
+      <div className="relative w-full h-48">
+        <Image
           src={
             property.images[0] ||
             "https://via.placeholder.com/300x200?text=Sem+Imagem"
           }
           alt={property.title}
-          className="w-full h-48 object-cover"
+          fill
+          className="object-cover"
         />
         {property.featured && (
           <div className="absolute top-3 left-3 bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded-full">
@@ -108,7 +115,6 @@ const SimilarPropertyCard = ({ property }: { property: Property }) => {
         <h3 className="font-medium text-gray-900 mb-2 line-clamp-2">
           {property.title}
         </h3>
-
         <div className="flex items-center text-gray-500 text-sm mb-3">
           <MapPin className="w-4 h-4 mr-1" />
           <span>{property.location}</span>
@@ -151,12 +157,14 @@ export default function PropertyDetailPage({
 }) {
   const { id } = params;
 
-  const [property, setProperty] = useState<Property | null>(null);
-  const [similarProperties, setSimilarProperties] = useState<Property[]>([]);
+  const [property, setProperty] = useState<PropertyWithExtras | null>(null);
+  const [similarProperties, setSimilarProperties] = useState<
+    PropertyWithExtras[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isLiked, setIsLiked] = useState(false);
-  const [mainImage, setMainImage] = useState<string>(""); // imagem em destaque
+  const [mainImage, setMainImage] = useState<string>("");
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -166,19 +174,19 @@ export default function PropertyDetailPage({
           .from("properties")
           .select(
             `
-            id,
-            title,
-            location,
-            price,
-            bedrooms,
-            bathrooms,
-            area,
-            created_at,
-            updated_at,
-            images,
-            description,
-            featured
-          `
+          id,
+          title,
+          location,
+          price,
+          bedrooms,
+          bathrooms,
+          area,
+          created_at,
+          updated_at,
+          images,
+          description,
+          featured
+        `
           )
           .eq("id", id)
           .single();
@@ -192,7 +200,7 @@ export default function PropertyDetailPage({
 
         const imagesArray = Array.isArray(data.images) ? data.images : [];
 
-        const processedProperty: Property = {
+        const processedProperty: PropertyWithExtras = {
           ...data,
           images: imagesArray,
           formattedArea: `${data.area}m²`,
@@ -200,43 +208,40 @@ export default function PropertyDetailPage({
         };
 
         setProperty(processedProperty);
-        if (imagesArray.length > 0) setMainImage(imagesArray[0]); // seta imagem principal
+        if (imagesArray.length > 0) setMainImage(imagesArray[0]);
 
-        // Buscar propriedades similares
         const similar = await fetchSimilarProperties(data.price, id);
         setSimilarProperties(similar);
 
         setError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Erro ao buscar dados da propriedade:", err);
-        setError(`Erro: ${err.message || "Erro desconhecido"}`);
+        if (err instanceof Error) {
+          setError(`Erro: ${err.message}`);
+        } else {
+          setError("Erro desconhecido");
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    if (id) {
-      fetchProperty();
-    }
+    if (id) fetchProperty();
   }, [id]);
 
-  if (loading) {
+  if (loading)
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader className="animate-spin text-[#AC761B]" size={48} />
       </div>
     );
-  }
-
-  if (error) {
+  if (error)
     return (
       <div className="text-center p-12">
         <h2 className="text-2xl text-red-600 font-semibold">{error}</h2>
       </div>
     );
-  }
-
-  if (!property) {
+  if (!property)
     return (
       <div className="text-center p-12">
         <h2 className="text-2xl text-gray-600 font-semibold">
@@ -244,7 +249,6 @@ export default function PropertyDetailPage({
         </h2>
       </div>
     );
-  }
 
   return (
     <div className="max-w-7xl mx-auto p-6 bg-white">
@@ -284,37 +288,40 @@ export default function PropertyDetailPage({
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column - Main Image */}
+        {/* Left Column */}
         <div className="lg:col-span-2">
-          <div className="relative rounded-2xl overflow-hidden mb-4 group">
-            <img
+          <div className="relative rounded-2xl overflow-hidden mb-4 group h-96">
+            <Image
               src={mainImage}
               alt={property.title}
-              className="w-full h-96 object-cover transition-transform group-hover:scale-105 cursor-pointer"
+              fill
+              className="object-cover transition-transform group-hover:scale-105 cursor-pointer"
+              priority
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
           </div>
 
-          {/* Small Images */}
+          {/* Thumbnails */}
           <div className="grid grid-cols-2 gap-3 mb-4">
             {property.images && property.images.length > 1
-              ? property.images.map((image: string, index: number) => (
+              ? property.images.map((image, index) => (
                   <div
                     key={index}
-                    className="relative rounded-xl overflow-hidden cursor-pointer"
+                    className="relative rounded-xl overflow-hidden cursor-pointer h-32"
                     onClick={() => setMainImage(image)}
                   >
-                    <img
+                    <Image
                       src={image}
                       alt={`Imagem ${index + 1}`}
-                      className="w-full h-32 object-cover"
+                      fill
+                      className="object-cover"
                     />
                   </div>
                 ))
               : Array.from({ length: 4 }, (_, index) => (
                   <div
                     key={index}
-                    className="relative rounded-xl overflow-hidden bg-gray-200 flex items-center justify-center"
+                    className="relative rounded-xl overflow-hidden bg-gray-200 flex items-center justify-center h-32"
                   >
                     <Home className="w-8 h-8 text-gray-400" />
                   </div>
@@ -355,13 +362,13 @@ export default function PropertyDetailPage({
             </div>
           </div>
 
-          {/* Features and Description */}
+          {/* Description */}
           <div className="prose max-w-none text-gray-600 text-sm leading-relaxed">
             <p className="mb-4">{property.description}</p>
           </div>
         </div>
 
-        {/* Right Column - Price and Contact */}
+        {/* Right Column */}
         <div className="space-y-4">
           <div className="bg-white border border-gray-200 rounded-2xl p-6 sticky top-4">
             <div className="text-center mb-6">
@@ -370,11 +377,9 @@ export default function PropertyDetailPage({
               </p>
               <p className="text-sm text-gray-500">Oferta</p>
             </div>
-
             <button className="w-full bg-[#AC761B] text-white font-medium py-3 px-6 rounded-xl transition-colors mb-4">
               Entre em contato
             </button>
-
             <div className="border-t pt-4">
               <div className="flex items-center space-x-3 mb-3">
                 <div>

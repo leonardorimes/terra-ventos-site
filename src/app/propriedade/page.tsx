@@ -6,11 +6,24 @@ import Hero from "@/components/Hero";
 import PropertyCard from "@/components/PropertyCard";
 import { supabase } from "@/lib/supabaseClient";
 
+interface PriceRangeFilter {
+  min?: number;
+  max?: number;
+}
+interface Filters {
+  priceRange?: PriceRangeFilter;
+  propertyType?: string | string[];
+  bedrooms?: number;
+  bathrooms?: number;
+  area?: { min?: number; max?: number };
+  features?: string[];
+}
+
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filters, setFilters] = useState({});
+  const [filters, setFilters] = useState<Filters>({});
 
   // Buscar todas as propriedades
   useEffect(() => {
@@ -54,16 +67,19 @@ export default function PropertiesPage() {
 
           switch (key) {
             case "priceRange":
-              if (value.min !== undefined && property.price < value.min)
+              const priceFilter = value as PriceRangeFilter;
+              const propertyPrice = parseFloat(property.price || "0"); // converte string para número
+              if (
+                priceFilter.min !== undefined &&
+                propertyPrice < priceFilter.min
+              )
                 return false;
-              if (value.max !== undefined && property.price > value.max)
+              if (
+                priceFilter.max !== undefined &&
+                propertyPrice > priceFilter.max
+              )
                 return false;
               return true;
-
-            case "propertyType":
-              return Array.isArray(value)
-                ? value.includes(property.type)
-                : property.type === value;
 
             case "bedrooms":
               return property.bedrooms >= value;
@@ -72,17 +88,13 @@ export default function PropertiesPage() {
               return property.bathrooms >= value;
 
             case "area":
-              if (value.min !== undefined && property.area < value.min)
+              const areaFilter = value as { min?: number; max?: number };
+              const propertyArea = Number(property.area || 0);
+              if (areaFilter.min !== undefined && propertyArea < areaFilter.min)
                 return false;
-              if (value.max !== undefined && property.area > value.max)
+              if (areaFilter.max !== undefined && propertyArea > areaFilter.max)
                 return false;
               return true;
-
-            case "features":
-              return (
-                Array.isArray(value) &&
-                value.every((feature) => property.features?.includes(feature))
-              );
 
             default:
               return true;
@@ -98,7 +110,7 @@ export default function PropertiesPage() {
     setSearchTerm(term);
   };
 
-  const handleFiltersChange = (newFilters: any) => {
+  const handleFiltersChange = (newFilters: Filters) => {
     setFilters(newFilters);
   };
 
@@ -128,7 +140,7 @@ export default function PropertiesPage() {
             <p className="text-blue-800">
               {searchTerm && (
                 <span>
-                  Buscando por: <strong>"{searchTerm}"</strong>
+                  Buscando por: <strong>&quot;{searchTerm}&quot;</strong>
                 </span>
               )}
               {searchTerm && Object.keys(filters).length > 0 && (

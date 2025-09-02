@@ -7,7 +7,11 @@ import { useState } from "react";
 
 import { Property } from "@/types/property";
 
-export default function PropertyCard({ property }: Property) {
+interface PropertyCardProps {
+  property: Property;
+}
+
+export default function PropertyCard({ property }: PropertyCardProps) {
   console.log(property);
   const [isFavorited, setIsFavorited] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
