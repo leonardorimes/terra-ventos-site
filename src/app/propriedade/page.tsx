@@ -18,7 +18,7 @@ export default function PropertiesPage() {
     bedrooms: undefined,
     bathrooms: undefined,
     area: { min: undefined, max: undefined },
-    features: undefined,
+    featured: undefined,
   });
 
   useEffect(() => {
@@ -133,7 +133,7 @@ export default function PropertiesPage() {
                     bedrooms: undefined,
                     bathrooms: undefined,
                     area: { min: undefined, max: undefined },
-                    features: undefined,
+                    featured: undefined,
                   });
                 }}
                 className="bg-[#BCB785] text-white px-6 py-2 rounded-lg hover:bg-[#AC761B] transition-colors"

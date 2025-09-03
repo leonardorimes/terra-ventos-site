@@ -10,5 +10,5 @@ export interface Filters {
   bathrooms?: number;
   location: string;
   area?: { min?: number; max?: number };
-  features?: string[];
+  featured?: string[];
 }

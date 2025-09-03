@@ -25,7 +25,7 @@ const FiltersPopup: React.FC<FiltersPopupProps> = ({
       bedrooms: undefined,
       bathrooms: undefined,
       area: { min: undefined, max: undefined },
-      features: undefined,
+      featured: undefined,
     }
   );
 
@@ -97,7 +97,7 @@ const FiltersPopup: React.FC<FiltersPopupProps> = ({
       bedrooms: undefined,
       bathrooms: undefined,
       area: { min: undefined, max: undefined },
-      features: undefined,
+      featured: undefined,
     });
   };
 
@@ -236,7 +236,7 @@ const FiltersPopup: React.FC<FiltersPopupProps> = ({
             <input
               type="text"
               placeholder="Ex: Piscina, Churrasqueira, Academia"
-              value={filters.features?.join(", ") || ""}
+              value={filters.featured?.join(", ") || ""}
               onChange={(e) => handleFeaturesChange(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
             />

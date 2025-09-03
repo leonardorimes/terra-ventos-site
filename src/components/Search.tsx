@@ -3,13 +3,11 @@
 import React, { useEffect, useState } from "react";
 import { Search, Filter } from "lucide-react";
 import FiltersPopup from "./FiltersPopup";
-import { useRouter } from "next/navigation";
 import { Filters } from "@/types/filters";
 
 interface SearchComponentProps {
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
-  // Alterado o tipo de onFiltersChange para Filters
   onFiltersChange?: (filters: Filters) => void;
 }
 
@@ -27,25 +25,30 @@ const SearchComponent: React.FC<SearchComponentProps> = ({
     bedrooms: undefined,
     bathrooms: undefined,
     area: { min: undefined, max: undefined },
-    features: undefined,
+    featured: undefined,
   });
 
-  const router = useRouter();
+  // Sincroniza localSearch com searchTerm quando ele muda externamente
+  useEffect(() => {
+    setLocalSearch(searchTerm);
+  }, [searchTerm]);
 
-  // Debounce para search
+  // Debounce para search - aplica mudanças após 300ms de inatividade
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (onSearchChange) onSearchChange(localSearch);
+      if (onSearchChange && localSearch !== searchTerm) {
+        onSearchChange(localSearch);
+      }
     }, 300);
     return () => clearTimeout(timeout);
-  }, [localSearch, onSearchChange]);
+  }, [localSearch, onSearchChange, searchTerm]);
 
   // Função para verificar se há algum filtro ativo
   const hasFilters = () => {
     const {
       priceRange,
       area,
-      features,
+      featured,
       propertyType,
       bedrooms,
       bathrooms,
@@ -56,7 +59,7 @@ const SearchComponent: React.FC<SearchComponentProps> = ({
       (priceRange?.max !== undefined && priceRange?.max !== null) ||
       (area?.min !== undefined && area?.min !== null) ||
       (area?.max !== undefined && area?.max !== null) ||
-      (features?.length && features.length > 0) ||
+      (featured?.length && featured.length > 0) ||
       (propertyType !== undefined && propertyType !== "") ||
       (bedrooms !== undefined && bedrooms !== null) ||
       (bathrooms !== undefined && bathrooms !== null) ||
@@ -66,84 +69,16 @@ const SearchComponent: React.FC<SearchComponentProps> = ({
 
   const handleApplyFilters = (filters: Filters) => {
     setActiveFilters(filters);
-
     if (onFiltersChange) {
       onFiltersChange(filters);
-    } else if (localSearch || hasFilters()) {
-      const params = new URLSearchParams();
-      if (localSearch) params.set("q", localSearch);
-
-      // Itera sobre o objeto de filtros para adicionar à URLSearchParams
-      Object.entries(filters).forEach(([key, value]) => {
-        if (key === "priceRange" && value && (value.min || value.max)) {
-          if (value.min) params.set("priceMin", value.min.toString());
-          if (value.max) params.set("priceMax", value.max.toString());
-        } else if (key === "area" && value && (value.min || value.max)) {
-          if (value.min) params.set("areaMin", value.min.toString());
-          if (value.max) params.set("areaMax", value.max.toString());
-        } else if (
-          key === "features" &&
-          Array.isArray(value) &&
-          value.length > 0
-        ) {
-          params.set("features", value.join(","));
-        } else if (value !== undefined && value !== null && value !== "") {
-          params.set(key, String(value));
-        }
-      });
-      router.push(`/propriedade?${params.toString()}`);
     }
-
     setFiltersOpen(false);
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setLocalSearch(value);
-
-    // Se não há uma função onSearchChange, atualiza a URL para refletir a busca instantânea
-    if (!onSearchChange) {
-      const params = new URLSearchParams();
-      if (value.trim() !== "") {
-        params.set("q", value);
-      }
-
-      // Mantém os filtros existentes na URL ao buscar
-      Object.entries(activeFilters).forEach(([key, filterValue]) => {
-        if (
-          key === "priceRange" &&
-          filterValue &&
-          (filterValue.min || filterValue.max)
-        ) {
-          if (filterValue.min)
-            params.set("priceMin", filterValue.min.toString());
-          if (filterValue.max)
-            params.set("priceMax", filterValue.max.toString());
-        } else if (
-          key === "area" &&
-          filterValue &&
-          (filterValue.min || filterValue.max)
-        ) {
-          if (filterValue.min)
-            params.set("areaMin", filterValue.min.toString());
-          if (filterValue.max)
-            params.set("areaMax", filterValue.max.toString());
-        } else if (
-          key === "features" &&
-          Array.isArray(filterValue) &&
-          filterValue.length > 0
-        ) {
-          params.set("features", filterValue.join(","));
-        } else if (
-          filterValue !== undefined &&
-          filterValue !== null &&
-          filterValue !== ""
-        ) {
-          params.set(key, String(filterValue));
-        }
-      });
-      router.push(`/propriedade?${params.toString()}`);
-    }
+    // O debounce effect acima cuidará da propagação da mudança
   };
 
   return (
