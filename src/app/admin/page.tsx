@@ -30,6 +30,7 @@ interface Property {
   featured: boolean;
   description: string;
   created_at: string;
+  youtube_video?: string; // <-- adicionando campo do vídeo
 }
 
 interface PropertyFormData {
@@ -42,6 +43,7 @@ interface PropertyFormData {
   images: string[];
   featured: boolean;
   description: string;
+  youtube_video: string; // <-- adicionando campo do vídeo
 }
 
 const PropertyCRUD = () => {
@@ -67,6 +69,7 @@ const PropertyCRUD = () => {
     images: [],
     featured: false,
     description: "",
+    youtube_video: "", // <-- default vazio
   });
 
   // Buscar todas as propriedades
@@ -79,13 +82,14 @@ const PropertyCRUD = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-
       setProperties(
         (data as Property[]).map((p) => ({
           ...p,
           images: p.images || [],
+          youtube_video: p.youtube_video || "", // já tipado corretamente
         })) || []
       );
+
       setError(null);
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -164,6 +168,7 @@ const PropertyCRUD = () => {
         images: property.images || [],
         featured: property.featured || false,
         description: property.description || "",
+        youtube_video: property.youtube_video || "", // <-- preencher do banco
       });
       setImageUrls(property.images || []);
     } else {
@@ -177,6 +182,7 @@ const PropertyCRUD = () => {
         images: [],
         featured: false,
         description: "",
+        youtube_video: "", // <-- reset
       });
       setImageUrls([]);
     }
@@ -195,17 +201,28 @@ const PropertyCRUD = () => {
   };
 
   // Handle form input changes
+  // Handle form input changes
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >
   ) => {
     const { name, value, type } = e.target;
-    const checked =
-      type === "checkbox" ? (e.target as HTMLInputElement).checked : undefined;
+
+    // Trata o caso específico de um checkbox
+    if (type === "checkbox" && e.target instanceof HTMLInputElement) {
+      const checked = e.target.checked;
+      setFormData((prev) => ({
+        ...prev,
+        [name]: checked,
+      }));
+      return; // Encerra a função aqui para checkboxes
+    }
+
+    // Trata os outros tipos de input (text, number, select, etc.)
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     }));
   };
 
@@ -225,6 +242,24 @@ const PropertyCRUD = () => {
       }));
     } else {
       setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  // Função para converter URL do YouTube em URL de embed
+  const getYoutubeEmbedUrl = (url: string) => {
+    if (!url) return null;
+    try {
+      // Suporta formatos: https://www.youtube.com/watch?v=ID e https://youtu.be/ID
+      const u = new URL(url);
+      let id = "";
+      if (u.hostname.includes("youtu.be")) {
+        id = u.pathname.replace("/", "");
+      } else {
+        id = u.searchParams.get("v") || "";
+      }
+      return id ? `https://www.youtube.com/embed/${id}` : null;
+    } catch {
+      return null;
     }
   };
 
@@ -251,6 +286,7 @@ const PropertyCRUD = () => {
         images: finalImageUrls,
         featured: formData.featured,
         description: formData.description,
+        youtube_video: formData.youtube_video || null, // <-- enviar para o banco
       };
 
       if (modalMode === "create") {
@@ -552,7 +588,7 @@ const PropertyCRUD = () => {
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h[90vh] max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div
               className="flex items-center justify-between p-6 border-b"
@@ -719,6 +755,28 @@ const PropertyCRUD = () => {
                   ></textarea>
                 </div>
 
+                {/* YouTube Video URL */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Vídeo do YouTube (URL)
+                  </label>
+                  <input
+                    type="url"
+                    name="youtube_video"
+                    value={formData.youtube_video}
+                    onChange={handleInputChange}
+                    disabled={modalMode === "view" || loading}
+                    placeholder="https://www.youtube.com/watch?v=SEU_VIDEO_ID"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-opacity-50 disabled:bg-gray-100"
+                  />
+                  {modalMode !== "view" && formData.youtube_video && (
+                    <div className="mt-3 text-xs text-gray-500">
+                      O link deve ser uma URL válida do YouTube (ex.:
+                      watch?v=... ou youtu.be/...).
+                    </div>
+                  )}
+                </div>
+
                 {/* Images */}
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -814,6 +872,32 @@ const PropertyCRUD = () => {
                   )}
                 </div>
               </div>
+
+              {/* Pré-visualização do vídeo no modo "view" */}
+              {modalMode === "view" &&
+                (currentProperty?.youtube_video || formData.youtube_video) && (
+                  <div className="mt-8">
+                    <h3 className="text-md font-semibold text-gray-800 mb-3">
+                      Vídeo
+                    </h3>
+                    <div className="aspect-video w-full rounded-xl overflow-hidden shadow-md">
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        src={
+                          getYoutubeEmbedUrl(
+                            (currentProperty?.youtube_video ||
+                              formData.youtube_video) as string
+                          ) || ""
+                        }
+                        title="YouTube video player"
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      ></iframe>
+                    </div>
+                  </div>
+                )}
 
               {/* Modal Footer */}
               <div className="flex gap-3 mt-8">
