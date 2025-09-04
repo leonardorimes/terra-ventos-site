@@ -1,3 +1,4 @@
+import Link from "next/link";
 import React from "react";
 
 const LuxuryDesignSection = () => {
@@ -34,10 +35,12 @@ const LuxuryDesignSection = () => {
         </h1>
 
         <div className="mt-12">
-          <button className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-[#AC761B] to-[#c6a46a] rounded-full transition-all duration-300 hover:from-[#946016] hover:to-[#b4945d] hover:scale-105 hover:shadow-2xl hover:shadow-[#AC761B]/30 focus:outline-none focus:ring-4 focus:ring-[#AC761B]/30">
-            <span className="relative z-10">Vamos lá!</span>
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#AC761B] to-[#c6a46a] opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
-          </button>
+          <Link
+            href="/propriedade"
+            className="bg-[#AC761B] text-white px-6 py-3 rounded-full font-medium hover:bg-[#BCB785] transition-colors duration-300"
+          >
+            Ver propriedades
+          </Link>
         </div>
       </div>
 

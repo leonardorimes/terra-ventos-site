@@ -1,3 +1,4 @@
+import Link from "next/link";
 import React from "react";
 
 const Footer = () => {
@@ -15,75 +16,19 @@ const Footer = () => {
                 <span className="font-normal">o sucesso—contate-nos hoje.</span>
               </h2>
 
-              <button className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-[#AC761B] to-[#c6a46a] rounded-full transition-all duration-300 hover:from-[#946016] hover:to-[#b4945d] hover:scale-105 hover:shadow-2xl hover:shadow-[#AC761B]/25 focus:outline-none focus:ring-4 focus:ring-[#AC761B]/20">
+              <Link
+                href="https://wa.me/558585572807"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-[#AC761B] to-[#c6a46a] rounded-full transition-all duration-300 hover:from-[#946016] hover:to-[#b4945d] hover:scale-105 hover:shadow-2xl hover:shadow-[#AC761B]/25 focus:outline-none focus:ring-4 focus:ring-[#AC761B]/20"
+              >
                 <span className="relative z-10">Entre em contato</span>
                 <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#AC761B] to-[#c6a46a] opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
-              </button>
+              </Link>
             </div>
           </div>
 
           {/* Right Column - Navigation Links */}
-          <div className="grid grid-cols-2 gap-8 sm:gap-12">
-            {/* First Column */}
-            <div className="space-y-6">
-              <nav className="space-y-4">
-                <a
-                  href="#"
-                  className="block text-gray-300 hover:text-[#c6a46a] transition-colors duration-200 text-sm uppercase tracking-wider"
-                >
-                  Home
-                </a>
-                <a
-                  href="#"
-                  className="block text-gray-300 hover:text-[#c6a46a] transition-colors duration-200 text-sm uppercase tracking-wider"
-                >
-                  Categories
-                </a>
-                <a
-                  href="#"
-                  className="block text-gray-300 hover:text-[#c6a46a] transition-colors duration-200 text-sm uppercase tracking-wider"
-                >
-                  Properties
-                </a>
-                <a
-                  href="#"
-                  className="block text-gray-300 hover:text-[#c6a46a] transition-colors duration-200 text-sm uppercase tracking-wider"
-                >
-                  Featured property
-                </a>
-              </nav>
-            </div>
-
-            {/* Second Column */}
-            <div className="space-y-6">
-              <nav className="space-y-4">
-                <a
-                  href="#"
-                  className="block text-gray-300 hover:text-[#c6a46a] transition-colors duration-200 text-sm uppercase tracking-wider"
-                >
-                  Testimonials
-                </a>
-                <a
-                  href="#"
-                  className="block text-gray-300 hover:text-[#c6a46a] transition-colors duration-200 text-sm uppercase tracking-wider"
-                >
-                  Blog
-                </a>
-                <a
-                  href="#"
-                  className="block text-gray-300 hover:text-[#c6a46a] transition-colors duration-200 text-sm uppercase tracking-wider"
-                >
-                  FAQs
-                </a>
-                <a
-                  href="#"
-                  className="block text-gray-300 hover:text-[#c6a46a] transition-colors duration-200 text-sm uppercase tracking-wider"
-                >
-                  Get in get
-                </a>
-              </nav>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -92,23 +37,9 @@ const Footer = () => {
         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-6">
           <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
             {/* Copyright */}
-            <div className="text-[#c6a46a] text-sm">©2025 exame.ly</div>
+            <div className="text-[#c6a46a] text-sm">©2025 terraventos</div>
 
             {/* Legal Links */}
-            <div className="flex space-x-8">
-              <a
-                href="#"
-                className="text-[#c6a46a] hover:text-[#AC761B] text-sm transition-colors duration-200"
-              >
-                Terms of service
-              </a>
-              <a
-                href="#"
-                className="text-[#c6a46a] hover:text-[#AC761B] text-sm transition-colors duration-200"
-              >
-                Privacy policy
-              </a>
-            </div>
           </div>
         </div>
       </div>

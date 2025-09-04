@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link"; // <-- MUDANÇA: Importar o Link
 import { Heart, MapPin, Home, Calendar, Loader } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { Property } from "@/types/property";
@@ -11,12 +12,11 @@ import { Property } from "@/types/property";
 interface PropertyWithExtras extends Property {
   formattedArea: string;
   timeAgo: string;
-  youtube_video?: string; // Campo para o vídeo
+  youtube_video?: string;
 }
 
-// --- FUNÇÕES UTILITÁRIAS ---
-
-// Calcula o tempo decorrido desde a publicação
+// --- FUNÇÕES UTILITÁRIAS (sem alterações) ---
+// ... (todo o código das funções utilitárias permanece o mesmo)
 const getTimeAgo = (dateString: string) => {
   if (!dateString) return "N/A";
   const date = new Date(dateString);
@@ -29,18 +29,15 @@ const getTimeAgo = (dateString: string) => {
   return `${Math.ceil(diffDays / 30)} meses atrás`;
 };
 
-// Formata o preço para exibição
 const formatPrice = (priceText: string | null) =>
   priceText || "Preço sob consulta";
 
-// Extrai o valor numérico do preço para comparações
 const extractPriceValue = (priceText: string | null): number => {
   if (!priceText) return 0;
   const numericValue = priceText.replace(/[^\d.]/g, "");
   return parseFloat(numericValue) || 0;
 };
 
-// Converte URL do YouTube para URL de embed
 const getYoutubeEmbedUrl = (url: string): string | null => {
   if (!url) return null;
   try {
@@ -60,7 +57,6 @@ const getYoutubeEmbedUrl = (url: string): string | null => {
   }
 };
 
-// Busca propriedades similares com base na faixa de preço
 const fetchSimilarProperties = async (
   currentPrice: string | null,
   currentId: string
@@ -75,7 +71,7 @@ const fetchSimilarProperties = async (
 
     const { data, error } = await supabase
       .from("properties")
-      .select("*") // Seleciona todos os campos para simplicidade
+      .select("*")
       .neq("id", currentId)
       .gte("price_numeric", minPrice)
       .lte("price_numeric", maxPrice)
@@ -95,9 +91,8 @@ const fetchSimilarProperties = async (
   }
 };
 
-// --- COMPONENTES ---
-
-// Componente para o Player de Vídeo
+// --- COMPONENTES (sem alterações) ---
+// ... (YouTubePlayer, SimilarPropertyCard)
 const YouTubePlayer = ({ videoUrl }: { videoUrl: string }) => {
   const embedUrl = getYoutubeEmbedUrl(videoUrl);
 
@@ -124,7 +119,6 @@ const YouTubePlayer = ({ videoUrl }: { videoUrl: string }) => {
   );
 };
 
-// Componente para card de propriedade similar
 const SimilarPropertyCard = ({
   property,
 }: {
@@ -213,7 +207,7 @@ export default function PropertyDetailPage({
         setLoading(true);
         const { data, error } = await supabase
           .from("properties")
-          .select("*") // Busca todos os campos, incluindo youtube_video
+          .select("*")
           .eq("id", id)
           .single();
 
@@ -255,6 +249,12 @@ export default function PropertyDetailPage({
 
     if (id) fetchProperty();
   }, [id]);
+
+  // <-- MUDANÇA: Construção da URL do WhatsApp
+  const whatsappMessage = `Olá, estou interessado na propriedade: ${property?.title} (ID: ${property?.id})`;
+  const whatsappUrl = `https://wa.me/558585572807?text=${encodeURIComponent(
+    whatsappMessage
+  )}`;
 
   if (loading)
     return (
@@ -421,9 +421,17 @@ export default function PropertyDetailPage({
               </p>
               <p className="text-sm text-gray-500">Oferta</p>
             </div>
-            <button className="w-full bg-[#AC761B] text-white font-medium py-3 px-6 rounded-xl transition-colors mb-4">
+
+            {/* <-- MUDANÇA: Botão agora é um Link */}
+            <Link
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full bg-[#AC761B] text-white font-medium text-center py-3 px-6 rounded-xl transition-colors mb-4 hover:bg-[#8B5E16]"
+            >
               Entre em contato
-            </button>
+            </Link>
+
             <div className="border-t pt-4">
               <div className="flex items-center space-x-3 mb-3">
                 <div>
