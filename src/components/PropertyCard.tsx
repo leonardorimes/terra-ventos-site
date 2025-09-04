@@ -24,6 +24,13 @@ export default function PropertyCard({ property }: PropertyCardProps) {
     setIsFavorited(!isFavorited);
   };
 
+  // Constrói a mensagem para o WhatsApp
+  const whatsappMessage = `Olá, estou interessado na propriedade: ${property.title} (ID: ${property.id})`;
+  // Codifica a mensagem para ser usada na URL
+  const whatsappUrl = `https://wa.me/558585572807?text=${encodeURIComponent(
+    whatsappMessage
+  )}`;
+
   return (
     <div className="group bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden border border-gray-100">
       {/* Image Container */}
@@ -119,10 +126,12 @@ export default function PropertyCard({ property }: PropertyCardProps) {
             Detalhes
           </Link>
           <Link
-            href={`/propriedade/${property.id}`}
+            href={whatsappUrl} // <-- AQUI ESTÁ A MUDANÇA
+            target="_blank" // Abre o link em uma nova aba
+            rel="noopener noreferrer" // Boas práticas de segurança para links externos
             className="flex-1 border border-[#AC761B] text-[#AC761B] py-2 px-4 rounded-full font-medium hover:bg-[#AC761B] hover:text-white transition-colors duration-300 flex items-center justify-center text-sm"
           >
-            contate
+            Contate
           </Link>
         </div>
       </div>

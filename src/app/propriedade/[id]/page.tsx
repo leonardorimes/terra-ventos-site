@@ -7,12 +7,16 @@ import { Heart, MapPin, Home, Calendar, Loader } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { Property } from "@/types/property";
 
+// --- INTERFACES ---
 interface PropertyWithExtras extends Property {
   formattedArea: string;
   timeAgo: string;
+  youtube_video?: string; // Campo para o vídeo
 }
 
-// Funções utilitárias
+// --- FUNÇÕES UTILITÁRIAS ---
+
+// Calcula o tempo decorrido desde a publicação
 const getTimeAgo = (dateString: string) => {
   if (!dateString) return "N/A";
   const date = new Date(dateString);
@@ -25,15 +29,38 @@ const getTimeAgo = (dateString: string) => {
   return `${Math.ceil(diffDays / 30)} meses atrás`;
 };
 
+// Formata o preço para exibição
 const formatPrice = (priceText: string | null) =>
   priceText || "Preço sob consulta";
 
+// Extrai o valor numérico do preço para comparações
 const extractPriceValue = (priceText: string | null): number => {
   if (!priceText) return 0;
   const numericValue = priceText.replace(/[^\d.]/g, "");
   return parseFloat(numericValue) || 0;
 };
 
+// Converte URL do YouTube para URL de embed
+const getYoutubeEmbedUrl = (url: string): string | null => {
+  if (!url) return null;
+  try {
+    const urlObj = new URL(url);
+    let videoId = null;
+
+    if (urlObj.hostname.includes("youtu.be")) {
+      videoId = urlObj.pathname.slice(1);
+    } else if (urlObj.hostname.includes("youtube.com")) {
+      videoId = urlObj.searchParams.get("v");
+    }
+
+    return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+  } catch (error) {
+    console.error("URL do YouTube inválida:", error);
+    return null;
+  }
+};
+
+// Busca propriedades similares com base na faixa de preço
 const fetchSimilarProperties = async (
   currentPrice: string | null,
   currentId: string
@@ -48,22 +75,7 @@ const fetchSimilarProperties = async (
 
     const { data, error } = await supabase
       .from("properties")
-      .select(
-        `
-        id,
-        title,
-        location,
-        price,
-        bedrooms,
-        bathrooms,
-        area,
-        created_at,
-        updated_at,
-        images,
-        description,
-        featured
-      `
-      )
+      .select("*") // Seleciona todos os campos para simplicidade
       .neq("id", currentId)
       .gte("price_numeric", minPrice)
       .lte("price_numeric", maxPrice)
@@ -81,6 +93,35 @@ const fetchSimilarProperties = async (
     console.error("Erro ao buscar propriedades similares:", error);
     return [];
   }
+};
+
+// --- COMPONENTES ---
+
+// Componente para o Player de Vídeo
+const YouTubePlayer = ({ videoUrl }: { videoUrl: string }) => {
+  const embedUrl = getYoutubeEmbedUrl(videoUrl);
+
+  if (!embedUrl) {
+    return (
+      <div className="bg-gray-100 rounded-xl p-4 text-center text-red-500">
+        URL do vídeo inválida.
+      </div>
+    );
+  }
+
+  return (
+    <div className="aspect-video w-full rounded-xl overflow-hidden shadow-md border border-gray-200">
+      <iframe
+        width="100%"
+        height="100%"
+        src={embedUrl}
+        title="YouTube video player"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        className="w-full h-full"
+      ></iframe>
+    </div>
+  );
 };
 
 // Componente para card de propriedade similar
@@ -103,7 +144,7 @@ const SimilarPropertyCard = ({
         />
         {property.featured && (
           <div className="absolute top-3 left-3 bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded-full">
-            Featured
+            Destaque
           </div>
         )}
         <button className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white transition-colors">
@@ -149,7 +190,7 @@ const SimilarPropertyCard = ({
   );
 };
 
-// Componente principal
+// --- COMPONENTE PRINCIPAL ---
 export default function PropertyDetailPage({
   params,
 }: {
@@ -172,22 +213,7 @@ export default function PropertyDetailPage({
         setLoading(true);
         const { data, error } = await supabase
           .from("properties")
-          .select(
-            `
-          id,
-          title,
-          location,
-          price,
-          bedrooms,
-          bathrooms,
-          area,
-          created_at,
-          updated_at,
-          images,
-          description,
-          featured
-        `
-          )
+          .select("*") // Busca todos os campos, incluindo youtube_video
           .eq("id", id)
           .single();
 
@@ -205,6 +231,7 @@ export default function PropertyDetailPage({
           images: imagesArray,
           formattedArea: `${data.area}m²`,
           timeAgo: getTimeAgo(data.created_at),
+          youtube_video: data.youtube_video || undefined,
         };
 
         setProperty(processedProperty);
@@ -270,7 +297,7 @@ export default function PropertyDetailPage({
           </div>
           {property.featured && (
             <div className="bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded-full">
-              Featured
+              Destaque
             </div>
           )}
           <button
@@ -292,7 +319,10 @@ export default function PropertyDetailPage({
         <div className="lg:col-span-2">
           <div className="relative rounded-2xl overflow-hidden mb-4 group h-96">
             <Image
-              src={mainImage}
+              src={
+                mainImage ||
+                "https://via.placeholder.com/800x600?text=Sem+Imagem"
+              }
               alt={property.title || "img"}
               fill
               className="object-cover transition-transform group-hover:scale-105 cursor-pointer"
@@ -302,12 +332,16 @@ export default function PropertyDetailPage({
           </div>
 
           {/* Thumbnails */}
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            {property.images && property.images.length > 1
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            {property.images && property.images.length > 0
               ? property.images.map((image, index) => (
                   <div
                     key={index}
-                    className="relative rounded-xl overflow-hidden cursor-pointer h-32"
+                    className={`relative rounded-xl overflow-hidden cursor-pointer h-32 border-2 ${
+                      mainImage === image
+                        ? "border-[#AC761B]"
+                        : "border-transparent"
+                    }`}
                     onClick={() => setMainImage(image)}
                   >
                     <Image
@@ -333,7 +367,7 @@ export default function PropertyDetailPage({
             <h3 className="text-lg font-medium text-gray-900 mb-4">
               Detalhes da Propriedade
             </h3>
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
               <div className="flex items-center">
                 <Home className="w-5 h-5 text-gray-600 mr-3" />
                 <div>
@@ -363,9 +397,19 @@ export default function PropertyDetailPage({
           </div>
 
           {/* Description */}
-          <div className="prose max-w-none text-gray-600 text-sm leading-relaxed">
+          <div className="prose max-w-none text-gray-600 text-sm leading-relaxed mb-8">
             <p className="mb-4">{property.description}</p>
           </div>
+
+          {/* YouTube Video Section */}
+          {property.youtube_video && (
+            <div className="mb-8">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Vídeo da Propriedade
+              </h3>
+              <YouTubePlayer videoUrl={property.youtube_video} />
+            </div>
+          )}
         </div>
 
         {/* Right Column */}

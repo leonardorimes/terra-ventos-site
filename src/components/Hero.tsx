@@ -32,6 +32,7 @@ const Hero: React.FC<HeroProps> = ({
       </div>
 
       {/* Content */}
+
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
         <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
           Propriedades para chamar de lar
