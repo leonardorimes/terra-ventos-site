@@ -12,7 +12,7 @@ const properties = [
   },
   {
     src: "/images/home4.webp",
-    title: "casas à beira-mar",
+    title: "Casas à beira-mar",
     desc: "Acorde todos os dias com a brisa do oceano em nossas casas de praia premium.",
   },
 ];
@@ -24,7 +24,7 @@ export default function PropertiesSection() {
     setIndex((prev) => (prev + 1) % properties.length);
   };
 
-  // Troca automática a cada 15s
+  // Troca automática a cada 10s
   useEffect(() => {
     const interval = setInterval(() => {
       setIndex((prev) => (prev + 1) % properties.length);
@@ -34,7 +34,7 @@ export default function PropertiesSection() {
   }, []);
 
   return (
-    <section className="max-w-7xl mx-auto px-6 py-16">
+    <section className="max-w-7xl mx-auto px-6 py-16 bg-transparent">
       {/* Texto principal */}
       <div className="max-w-2xl mb-12">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
@@ -61,9 +61,9 @@ export default function PropertiesSection() {
             alt={properties[index].title}
             width={900}
             height={600}
-            className="rounded-xl object-cover w-full h-[400px] transition-all duration-700"
+            className="rounded-xl object-cover w-full h-[400px] relative z-0"
           />
-          <div className="absolute inset-0 bg-black/40 rounded-xl flex flex-col justify-end p-6">
+          <div className="absolute inset-0 bg-black/40 rounded-xl flex flex-col justify-end p-6 z-10">
             <h3 className="text-white text-2xl font-semibold">
               {properties[index].title}
             </h3>
