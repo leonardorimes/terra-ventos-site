@@ -24,7 +24,7 @@ export default function PropertiesSection() {
     setIndex((prev) => (prev + 1) % properties.length);
   };
 
-  // Troca automática a cada 15s
+  // Troca automática a cada 10s
   useEffect(() => {
     const interval = setInterval(() => {
       setIndex((prev) => (prev + 1) % properties.length);
@@ -34,7 +34,7 @@ export default function PropertiesSection() {
   }, []);
 
   return (
-    <section className="max-w-7xl mx-auto px-6 py-16 bg-background">
+    <section className="max-w-7xl mx-auto px-6 py-16 bg-[var(--background)]">
       {/* Texto principal */}
       <div className="max-w-2xl mb-12">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
@@ -46,7 +46,7 @@ export default function PropertiesSection() {
         </p>
         <Link
           href="/propriedade"
-          className="bg-[#AC761B] text-white px-6 py-3 rounded-full font-medium transition-colors duration-300"
+          className="bg-[#AC761B] text-white px-6 py-3 rounded-full font-medium hover:bg-[#BCB785] transition-colors duration-300"
         >
           Ver propriedades
         </Link>
@@ -70,7 +70,7 @@ export default function PropertiesSection() {
             <p className="text-gray-200 mt-2 mb-4">{properties[index].desc}</p>
             <button
               onClick={handleNext}
-              className="w-12 h-12 flex items-center justify-center rounded-full bg-white hover:bg-gray-200 transition"
+              className="w-12 h-12 flex items-center justify-center rounded-full bg-white hover:bg-gray-200 transition-colors"
             >
               <ArrowRight className="text-gray-800" />
             </button>

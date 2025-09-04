@@ -141,7 +141,7 @@ export default function Home() {
 
   if (showSearchResults) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[var(--background)]">
         <Hero
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
@@ -202,7 +202,7 @@ export default function Home() {
 
   // Página inicial completa
   return (
-    <div>
+    <div className="bg-[var(--background)]">
       <Hero
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}

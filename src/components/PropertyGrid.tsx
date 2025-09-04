@@ -1,53 +1,26 @@
 "use client";
-
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
-import Image from "next/image";
-import { Bed, Bath, Square, Camera } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Property } from "@/types/property";
-import Link from "next/link";
+import { supabase } from "@/lib/supabaseClient";
+import PropertyCard from "@/components/PropertyCard";
 
-export interface PropertyRow {
-  id: string;
-  title: string | null;
-  location: string | null;
-  price: string | null;
-  bedrooms: number | null;
-  bathrooms: number | null;
-  area: number | null;
-  images: string[] | null;
-  featured: boolean | null;
-  created_at: string;
-}
-
-export default function PropertyList() {
+export default function PropertyGrid() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProperties = async () => {
+      setLoading(true);
       const { data, error } = await supabase
         .from("properties")
         .select("*")
-        .order("created_at", { ascending: false });
+        .limit(6); // Limita a 6 propriedades para o grid inicial
 
       if (error) {
-        console.error("Erro ao carregar propriedades:", error.message);
+        console.error("Erro ao buscar propriedades:", error.message);
       } else {
-        const mapped: Property[] = (data || []).map((p: PropertyRow) => ({
-          id: p.id,
-          title: p.title ?? "Título indisponível",
-          location: p.location ?? "Local não informado",
-          price: p.price ?? "Preço sob consulta",
-          bedrooms: p.bedrooms ?? 0,
-          bathrooms: p.bathrooms ?? 0,
-          area: p.area ?? 0,
-          images: Array.isArray(p.images) ? p.images : [],
-          featured: p.featured ?? false,
-        }));
-        setProperties(mapped);
+        setProperties(data as Property[]);
       }
-
       setLoading(false);
     };
 
@@ -56,65 +29,45 @@ export default function PropertyList() {
 
   if (loading) {
     return (
-      <p className="text-center text-gray-500">Carregando propriedades...</p>
-    );
-  }
-
-  if (!properties || properties.length === 0) {
-    return (
-      <p className="text-center text-gray-500">
-        Nenhuma propriedade encontrada.
-      </p>
+      <section className="max-w-7xl mx-auto px-6 py-16 bg-[var(--background)]">
+        <div className="text-center">
+          <div className="text-gray-500">Carregando propriedades...</div>
+        </div>
+      </section>
     );
   }
 
   return (
-    <div className="flex justify-center px-6 py-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl w-full">
-        {properties.map((property) => (
-          <Link key={property.id} href={`/propriedade/${property.id}`}>
-            <div className="bg-white rounded-2xl shadow-md overflow-hidden group hover:shadow-xl transition">
-              {/* Imagem */}
-              <div className="relative w-full h-64">
-                {property.images.length > 0 ? (
-                  <Image
-                    src={property.images[0]} // usa a primeira por enquanto
-                    alt={property.title || "img"}
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100">
-                    <Camera size={40} />
-                  </div>
-                )}
-              </div>
-
-              {/* Conteúdo */}
-              <div className="p-4">
-                <h3 className="text-xl font-semibold mb-1">{property.title}</h3>
-                <p className="text-gray-500 mb-2">{property.location}</p>
-                <p className="text-green-600 font-bold mb-4">
-                  {property.price}
-                </p>
-
-                {/* Detalhes */}
-                <div className="flex justify-between text-gray-600 text-sm">
-                  <span className="flex items-center gap-1">
-                    <Bed size={16} /> {property.bedrooms}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Bath size={16} /> {property.bathrooms}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Square size={16} /> {property.area} m²
-                  </span>
-                </div>
-              </div>
-            </div>
-          </Link>
-        ))}
+    <section className="max-w-7xl mx-auto px-6 py-16 bg-[var(--background)]">
+      {/* Título da seção */}
+      <div className="text-center mb-12">
+        <h2 className="text-3xl font-bold text-gray-900 mb-4">
+          Propriedades em Destaque
+        </h2>
+        <p className="text-gray-600 max-w-2xl mx-auto">
+          Confira nossa seleção especial de propriedades premium cuidadosamente
+          escolhidas para você.
+        </p>
       </div>
-    </div>
+
+      {/* Grid de propriedades */}
+      {properties.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {properties.map((property) => (
+            <PropertyCard key={property.id} property={property} />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <div className="text-gray-400 text-6xl mb-4">🏠</div>
+          <h3 className="text-xl font-semibold text-gray-700 mb-2">
+            Nenhuma propriedade encontrada
+          </h3>
+          <p className="text-gray-500">
+            Não foi possível carregar as propriedades no momento.
+          </p>
+        </div>
+      )}
+    </section>
   );
 }
