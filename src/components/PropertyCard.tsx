@@ -59,7 +59,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
         </button>
 
         {/* Property Image */}
-        <Link href={`/properties/${property.id}`}>
+        <Link href={`/propriedade/${property.id}`}>
           <div className="relative w-full h-full bg-gray-200 cursor-pointer">
             {!imageLoaded && (
               <div className="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 animate-pulse" />
@@ -80,7 +80,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
 
       {/* Property Details */}
       <div className="p-6">
-        <Link href={`/properties/${property.id}`} className="block">
+        <Link href={`/propriedade/${property.id}`} className="block">
           {/* Price */}
           <div className="mb-3">
             <p className="text-2xl font-bold text-gray-900">
