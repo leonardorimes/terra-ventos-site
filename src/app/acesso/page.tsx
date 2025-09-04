@@ -1,7 +1,7 @@
 // pages/acesso.tsx ou app/acesso/page.tsx
 
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import {
@@ -16,7 +16,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-const AuthPage = () => {
+// Componente que usa useSearchParams
+const AuthForm = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get("redirect") || "/admin";
@@ -43,7 +44,6 @@ const AuthPage = () => {
 
   // Listener de autenticação para redirecionamento
   useEffect(() => {
-    // CORREÇÃO: Desestruturamos 'subscription' de dentro de 'data'
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
@@ -54,13 +54,10 @@ const AuthPage = () => {
       }
     });
 
-    // A função de limpeza agora chama unsubscribe no objeto correto
     return () => {
       subscription?.unsubscribe();
     };
   }, [supabase, router, redirectUrl]);
-
-  // ... (resto do seu componente)
 
   // Limpar formulário ao trocar de modo
   useEffect(() => {
@@ -73,8 +70,6 @@ const AuthPage = () => {
     });
   }, [isLogin]);
 
-  // Suas funções de handler (handleInputChange, validateForm, etc.)
-  // Nenhuma mudança necessária aqui.
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -82,7 +77,33 @@ const AuthPage = () => {
   };
 
   const validateForm = () => {
-    /* ...código de validação... */ return true;
+    if (!formData.email || !formData.password) {
+      setMessage({
+        type: "error",
+        text: "Preencha todos os campos obrigatórios.",
+      });
+      return false;
+    }
+
+    if (!isLogin) {
+      if (!formData.fullName) {
+        setMessage({ type: "error", text: "Nome completo é obrigatório." });
+        return false;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        setMessage({ type: "error", text: "As senhas não coincidem." });
+        return false;
+      }
+      if (formData.password.length < 6) {
+        setMessage({
+          type: "error",
+          text: "A senha deve ter pelo menos 6 caracteres.",
+        });
+        return false;
+      }
+    }
+
+    return true;
   };
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -90,10 +111,12 @@ const AuthPage = () => {
     if (!validateForm()) return;
     setLoading(true);
     setMessage({ type: "", text: "" });
+
     const { error } = await supabase.auth.signInWithPassword({
       email: formData.email,
       password: formData.password,
     });
+
     if (error) {
       setMessage({ type: "error", text: "Email ou senha incorretos." });
     }
@@ -105,11 +128,13 @@ const AuthPage = () => {
     if (!validateForm()) return;
     setLoading(true);
     setMessage({ type: "", text: "" });
+
     const { data, error } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
       options: { data: { full_name: formData.fullName } },
     });
+
     if (error) {
       setMessage({ type: "error", text: "Este email já está cadastrado." });
     } else if (!data.session) {
@@ -122,7 +147,26 @@ const AuthPage = () => {
   };
 
   const handleForgotPassword = async () => {
-    /* ...código de esqueci a senha... */
+    if (!formData.email) {
+      setMessage({ type: "error", text: "Digite seu email primeiro." });
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(formData.email);
+
+    if (error) {
+      setMessage({
+        type: "error",
+        text: "Erro ao enviar email de recuperação.",
+      });
+    } else {
+      setMessage({
+        type: "success",
+        text: "Email de recuperação enviado. Verifique sua caixa de entrada.",
+      });
+    }
+    setLoading(false);
   };
 
   // Renderiza um loader enquanto a sessão está sendo verificada.
@@ -329,6 +373,21 @@ const AuthPage = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+// Componente principal com Suspense
+const AuthPage = () => {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-[#F5F2ED]">
+          <Loader className="animate-spin h-10 w-10 text-[#8B7355]" />
+        </div>
+      }
+    >
+      <AuthForm />
+    </Suspense>
   );
 };
 
