@@ -149,7 +149,7 @@ const PropertyCRUD = () => {
   // Filtrar propriedades
   const filteredProperties = properties.filter(
     (property) =>
-      property.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (property.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       property.location?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -200,7 +200,6 @@ const PropertyCRUD = () => {
     setError(null);
   };
 
-  // Handle form input changes
   // Handle form input changes
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -276,6 +275,11 @@ const PropertyCRUD = () => {
         setUploadingImages(false);
       }
 
+      // Garante que o ID da propriedade atual existe para a atualização
+      if (modalMode === "edit" && !currentProperty) {
+        throw new Error("ID da propriedade para edição não encontrado.");
+      }
+
       const propertyData = {
         title: formData.title,
         location: formData.location,
@@ -286,7 +290,7 @@ const PropertyCRUD = () => {
         images: finalImageUrls,
         featured: formData.featured,
         description: formData.description,
-        youtube_video: formData.youtube_video || null, // <-- enviar para o banco
+        youtube_video: formData.youtube_video || null,
       };
 
       if (modalMode === "create") {
@@ -297,8 +301,12 @@ const PropertyCRUD = () => {
 
         if (error) throw error;
 
-        setProperties((prev) => [data[0] as Property, ...prev]);
+        // Otimista: se a inserção retornar dados, atualiza a lista
+        if (data && data.length > 0) {
+          setProperties((prev) => [data[0] as Property, ...prev]);
+        }
       } else if (modalMode === "edit" && currentProperty) {
+        // Deletar imagens antigas que não estão mais no array
         const oldImages = currentProperty.images || [];
         const removedImages = oldImages.filter(
           (img) => !finalImageUrls.includes(img)
@@ -314,11 +322,16 @@ const PropertyCRUD = () => {
           .eq("id", currentProperty.id)
           .select();
 
-        if (error) throw error;
+        if (error) {
+          throw error;
+        }
 
+        // CORREÇÃO: Atualizar o estado local da propriedade editada
         setProperties((prev) =>
           prev.map((p) =>
-            p.id === currentProperty.id ? (data[0] as Property) : p
+            p.id === currentProperty.id
+              ? { ...p, ...propertyData, id: p.id }
+              : p
           )
         );
       }
@@ -338,7 +351,6 @@ const PropertyCRUD = () => {
       setUploadingImages(false);
     }
   };
-
   // Delete property
   const handleDelete = async (id: number) => {
     if (!window.confirm("Tem certeza que deseja deletar esta propriedade?")) {
@@ -695,7 +707,7 @@ const PropertyCRUD = () => {
                     disabled={modalMode === "view" || loading}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-opacity-50 disabled:bg-gray-100"
                   >
-                    {[0,1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
+                    {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
                       <option key={num} value={num}>
                         {num}
                       </option>
@@ -870,75 +882,67 @@ const PropertyCRUD = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* YouTube Video Embed (View Mode) */}
+                  {modalMode === "view" && currentProperty?.youtube_video && (
+                    <div className="md:col-span-2 mt-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Vídeo do YouTube
+                      </label>
+                      <div className="aspect-w-16 aspect-h-9">
+                        <iframe
+                          src={
+                            getYoutubeEmbedUrl(currentProperty.youtube_video) ||
+                            ""
+                          }
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="w-full h-full rounded-lg"
+                        ></iframe>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
+            </div>
 
-              {/* Pré-visualização do vídeo no modo "view" */}
-              {modalMode === "view" &&
-                (currentProperty?.youtube_video || formData.youtube_video) && (
-                  <div className="mt-8">
-                    <h3 className="text-md font-semibold text-gray-800 mb-3">
-                      Vídeo
-                    </h3>
-                    <div className="aspect-video w-full rounded-xl overflow-hidden shadow-md">
-                      <iframe
-                        width="100%"
-                        height="100%"
-                        src={
-                          getYoutubeEmbedUrl(
-                            (currentProperty?.youtube_video ||
-                              formData.youtube_video) as string
-                          ) || ""
-                        }
-                        title="YouTube video player"
-                        className="w-full h-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      ></iframe>
-                    </div>
-                  </div>
-                )}
-
-              {/* Modal Footer */}
-              <div className="flex gap-3 mt-8">
+            {/* Modal Footer */}
+            <div
+              className="p-6 border-t flex justify-end gap-3"
+              style={{ borderColor: "#E0D9CF" }}
+            >
+              <button
+                onClick={closeModal}
+                disabled={loading}
+                className="px-4 py-2 rounded-lg border text-gray-700 font-medium transition-colors hover:bg-gray-50 disabled:opacity-50"
+                style={{ borderColor: "#D4CCC0" }}
+              >
+                Cancelar
+              </button>
+              {modalMode !== "view" && (
                 <button
-                  type="button"
-                  onClick={closeModal}
-                  disabled={loading}
-                  className="flex-1 px-4 py-2 border rounded-lg font-medium hover:bg-gray-50 disabled:opacity-50"
-                  style={{ borderColor: "#D4CCC0" }}
+                  onClick={handleSubmit}
+                  disabled={loading || uploadingImages}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium transition-colors disabled:opacity-50"
+                  style={{ backgroundColor: "#8B7355" }}
+                  onMouseOver={(e) =>
+                    !loading &&
+                    !uploadingImages &&
+                    (e.currentTarget.style.backgroundColor = "#7A6148")
+                  }
+                  onMouseOut={(e) =>
+                    !loading &&
+                    !uploadingImages &&
+                    (e.currentTarget.style.backgroundColor = "#8B7355")
+                  }
                 >
-                  {modalMode === "view" ? "Fechar" : "Cancelar"}
+                  {(loading || uploadingImages) && (
+                    <Loader className="animate-spin" size={16} />
+                  )}
+                  {modalMode === "create" ? "Criar" : "Salvar Alterações"}
                 </button>
-                {modalMode !== "view" && (
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={
-                      loading ||
-                      uploadingImages ||
-                      !formData.title ||
-                      !formData.location ||
-                      !formData.price
-                    }
-                    className="flex-1 px-4 py-2 rounded-lg text-white font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                    style={{ backgroundColor: "#8B7355" }}
-                    onMouseOver={(e) =>
-                      !loading &&
-                      (e.currentTarget.style.backgroundColor = "#7A6148")
-                    }
-                    onMouseOut={(e) =>
-                      !loading &&
-                      (e.currentTarget.style.backgroundColor = "#8B7355")
-                    }
-                  >
-                    {loading && <Loader className="animate-spin" size={16} />}
-                    {modalMode === "create"
-                      ? "Criar Propriedade"
-                      : "Salvar Alterações"}
-                  </button>
-                )}
-              </div>
+              )}
             </div>
           </div>
         </div>

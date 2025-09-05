@@ -85,7 +85,13 @@ export default function PropertyCard({ property }: PropertyCardProps) {
         <Link href={`/properties/${property.id}`} className="block">
           {/* Price */}
           <div className="mb-3">
-            <p className="text-2xl font-bold text-gray-900">{property.price}</p>
+            {Number(property.price) > 0 ? (
+              <p className="text-2xl font-bold text-gray-900">
+                {property.price}
+              </p>
+            ) : (
+              <p> entre em contato</p>
+            )}
           </div>
 
           {/* Title and Location */}
@@ -107,12 +113,14 @@ export default function PropertyCard({ property }: PropertyCardProps) {
               <Bath className="w-4 h-4" />
               <span>{property.bathrooms}</span>
             </div>
+          </div>
 
+          {Number(property.area) > 0 && (
             <div className="flex items-center space-x-1">
               <Square className="w-4 h-4" />
               <span>{property.area}m²</span>
             </div>
-          </div>
+          )}
         </Link>
 
         {/* Contact Buttons */}

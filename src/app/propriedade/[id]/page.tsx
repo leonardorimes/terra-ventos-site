@@ -158,11 +158,11 @@ const SimilarPropertyCard = ({
         <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
           <div className="flex items-center">
             <Home className="w-4 h-4 mr-1" />
-            <span>{property.bedrooms} quartos</span>
+            <span>{property.bedrooms} quarto(s)</span>
           </div>
           <div className="flex items-center">
             <Home className="w-4 h-4 mr-1" />
-            <span>{property.bathrooms} banheiros</span>
+            <span>{property.bathrooms} banheiro(s)</span>
           </div>
           <div className="flex items-center">
             <span>{property.formattedArea}</span>
@@ -369,18 +369,20 @@ export default function PropertyDetailPage({
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
               <div className="flex items-center">
-                <Home className="w-5 h-5 text-gray-600 mr-3" />
                 <div>
                   <p className="font-medium text-gray-900">
-                    {property.bedrooms} quartos
+                    {Number(property.bedrooms) > 0
+                      ? `${property.bedrooms}  quarto(s)`
+                      : ""}{" "}
                   </p>
                 </div>
               </div>
               <div className="flex items-center">
-                <Home className="w-5 h-5 text-gray-600 mr-3" />
                 <div>
                   <p className="font-medium text-gray-900">
-                    {property.bathrooms} banheiros
+                    {Number(property.bathrooms) > 0
+                      ? `${property.bathrooms} banheiro(s)`
+                      : ""}{" "}
                   </p>
                 </div>
               </div>
@@ -417,7 +419,9 @@ export default function PropertyDetailPage({
           <div className="bg-white border border-gray-200 rounded-2xl p-6 sticky top-4">
             <div className="text-center mb-6">
               <p className="text-3xl font-light text-gray-900 mb-1">
-                {formatPrice(property.price)}
+                {Number(property.price) > 0
+                  ? formatPrice(property.price)
+                  : "Oferta imperdível"}
               </p>
               <p className="text-sm text-gray-500">Oferta</p>
             </div>

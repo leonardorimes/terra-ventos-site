@@ -26,7 +26,6 @@ export default function PropertyCard({ property }: PropertyCardProps) {
 
   // Constrói a mensagem para o WhatsApp
   const whatsappMessage = `Olá, estou interessado na propriedade: ${property.title} (ID: ${property.id})`;
-  // Codifica a mensagem para ser usada na URL
   const whatsappUrl = `https://wa.me/558585572807?text=${encodeURIComponent(
     whatsappMessage
   )}`;
@@ -84,7 +83,9 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           {/* Price */}
           <div className="mb-3">
             <p className="text-2xl font-bold text-gray-900">
-              {property.price || "Price not available"}
+              {Number(property.price) > 0
+                ? property.price
+                : "Oportunidade Imperdível!!"}
             </p>
           </div>
 
@@ -100,20 +101,26 @@ export default function PropertyCard({ property }: PropertyCardProps) {
 
           {/* Property Features */}
           <div className="flex items-center justify-between text-gray-600 text-sm">
-            <div className="flex items-center space-x-1">
-              <Bed className="w-4 h-4" />
-              <span>{property.bedrooms || 0}</span>
-            </div>
+            {Number(property.bedrooms) > 0 && (
+              <div className="flex items-center space-x-1">
+                <Bed className="w-4 h-4" />
+                <span>{property.bedrooms} quarto(s)</span>
+              </div>
+            )}
 
-            <div className="flex items-center space-x-1">
-              <Bath className="w-4 h-4" />
-              <span>{property.bathrooms || 0}</span>
-            </div>
+            {Number(property.bathrooms) > 0 && (
+              <div className="flex items-center space-x-1">
+                <Bath className="w-4 h-4" />
+                <span>{property.bathrooms} banheiro(s)</span>
+              </div>
+            )}
 
-            <div className="flex items-center space-x-1">
-              <Square className="w-4 h-4" />
-              <span>{property.area || 0}m²</span>
-            </div>
+            {Number(property.area) > 0 && (
+              <div className="flex items-center space-x-1">
+                <Square className="w-4 h-4" />
+                <span>{property.area}m²</span>
+              </div>
+            )}
           </div>
         </Link>
 
@@ -126,9 +133,9 @@ export default function PropertyCard({ property }: PropertyCardProps) {
             Detalhes
           </Link>
           <Link
-            href={whatsappUrl} // <-- AQUI ESTÁ A MUDANÇA
-            target="_blank" // Abre o link em uma nova aba
-            rel="noopener noreferrer" // Boas práticas de segurança para links externos
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex-1 border border-[#AC761B] text-[#AC761B] py-2 px-4 rounded-full font-medium hover:bg-[#AC761B] hover:text-white transition-colors duration-300 flex items-center justify-center text-sm"
           >
             Contate
