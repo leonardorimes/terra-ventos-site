@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
@@ -17,7 +18,7 @@ import {
   Loader,
 } from "lucide-react";
 
-// Defina a interface para o objeto de propriedade
+// Interface para propriedade
 interface Property {
   id: number;
   title: string;
@@ -30,9 +31,10 @@ interface Property {
   featured: boolean;
   description: string;
   created_at: string;
-  youtube_video?: string | null; // <-- adicionando campo do vídeo
+  youtube_video: string | null; // <-- CORREÇÃO: youtube_video pode ser string ou null
 }
 
+// Interface para o formulário
 interface PropertyFormData {
   title: string;
   location: string;
@@ -43,15 +45,16 @@ interface PropertyFormData {
   images: string[];
   featured: boolean;
   description: string;
-  youtube_video: string | null; // <-- adicionando campo do vídeo
+  youtube_video: string; // <-- CORREÇÃO: youtube_video é sempre string no formulário
 }
 
-const PropertyCRUD = () => {
-  // Use a interface para tipar o estado
+const PropertyCRUD: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [currentProperty, setCurrentProperty] = useState<Property | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState("create");
+  const [modalMode, setModalMode] = useState<"create" | "edit" | "view">(
+    "create"
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
@@ -69,11 +72,11 @@ const PropertyCRUD = () => {
     images: [],
     featured: false,
     description: "",
-    youtube_video: "", // <-- default vazio
+    youtube_video: "", // <-- CORREÇÃO: Valor inicial como string vazia
   });
 
   // Buscar todas as propriedades
-  const fetchProperties = async () => {
+  const fetchProperties = async (): Promise<void> => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -82,31 +85,29 @@ const PropertyCRUD = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setProperties(
+
+      const mapped: Property[] =
         (data as Property[]).map((p) => ({
           ...p,
           images: p.images || [],
-          youtube_video: p.youtube_video || "", // já tipado corretamente
-        })) || []
-      );
+          youtube_video: p.youtube_video || null, // <-- CORREÇÃO: Garante que é null se não existir
+        })) || [];
 
+      setProperties(mapped);
       setError(null);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error("Erro ao buscar propriedades:", error.message);
-        setError("Erro ao carregar propriedades: " + error.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError("Erro ao carregar propriedades: " + err.message);
       } else {
-        console.error("Erro ao buscar propriedades:", error);
-        setError(
-          "Erro ao carregar propriedades: Ocorreu um erro desconhecido."
-        );
+        setError("Erro ao carregar propriedades: erro desconhecido.");
       }
     } finally {
       setLoading(false);
     }
   };
-  // Upload de múltiplas imagens
-  const uploadMultipleImages = async (files: File[]) => {
+
+  // Upload múltiplas imagens
+  const uploadMultipleImages = async (files: File[]): Promise<string[]> => {
     const uploadPromises = files.map(async (file) => {
       const fileExt = file.name.split(".").pop();
       const fileName = `${Date.now()}-${Math.random()
@@ -130,15 +131,17 @@ const PropertyCRUD = () => {
     return await Promise.all(uploadPromises);
   };
 
-  // Deletar imagem do storage
-  const deleteImage = async (imageUrl: string) => {
+  // Deletar imagem
+  const deleteImage = async (imageUrl: string): Promise<void> => {
     try {
       const path = imageUrl.split("/").pop();
-      await supabase.storage
-        .from("property-images")
-        .remove([`properties/${path}`]);
-    } catch (error) {
-      console.error("Erro ao deletar imagem:", error);
+      if (path) {
+        await supabase.storage
+          .from("property-images")
+          .remove([`properties/${path}`]);
+      }
+    } catch (err) {
+      console.error("Erro ao deletar imagem:", err);
     }
   };
 
@@ -146,15 +149,18 @@ const PropertyCRUD = () => {
     fetchProperties();
   }, []);
 
-  // Filtrar propriedades
+  // Filtro
   const filteredProperties = properties.filter(
     (property) =>
       (property.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      property.location?.toLowerCase().includes(searchTerm.toLowerCase())
+      (property.location || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Abrir modal
-  const openModal = (mode: string, property: Property | null = null) => {
+  // Modal
+  const openModal = (
+    mode: "create" | "edit" | "view",
+    property: Property | null = null
+  ): void => {
     setModalMode(mode);
     setCurrentProperty(property);
     if (property) {
@@ -168,7 +174,7 @@ const PropertyCRUD = () => {
         images: property.images || [],
         featured: property.featured || false,
         description: property.description || "",
-        youtube_video: property.youtube_video || "", // <-- preencher do banco
+        youtube_video: property.youtube_video || "", // <-- CORREÇÃO: Preenche com string vazia se for null
       });
       setImageUrls(property.images || []);
     } else {
@@ -182,7 +188,7 @@ const PropertyCRUD = () => {
         images: [],
         featured: false,
         description: "",
-        youtube_video: "", // <-- reset
+        youtube_video: "", // <-- CORREÇÃO: Reset para string vazia
       });
       setImageUrls([]);
     }
@@ -191,8 +197,7 @@ const PropertyCRUD = () => {
     setIsModalOpen(true);
   };
 
-  // Fechar modal
-  const closeModal = () => {
+  const closeModal = (): void => {
     setIsModalOpen(false);
     setCurrentProperty(null);
     setImageFiles([]);
@@ -200,39 +205,33 @@ const PropertyCRUD = () => {
     setError(null);
   };
 
-  // Handle form input changes
+  // Input
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >
-  ) => {
+  ): void => {
     const { name, value, type } = e.target;
 
-    // Trata o caso específico de um checkbox
     if (type === "checkbox" && e.target instanceof HTMLInputElement) {
       const checked = e.target.checked;
-      setFormData((prev) => ({
-        ...prev,
-        [name]: checked,
-      }));
-      return; // Encerra a função aqui para checkboxes
+      setFormData((prev) => ({ ...prev, [name]: checked }));
+      return;
     }
 
-    // Trata os outros tipos de input (text, number, select, etc.)
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === "number" ? Number(value) : value,
     }));
   };
 
-  // Handle image upload
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Upload imagens
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     setImageFiles(files);
   };
 
-  // Remove image from preview
-  const removeImage = async (index: number, isExisting: boolean = false) => {
+  const removeImage = (index: number, isExisting: boolean = false): void => {
     if (isExisting) {
       setImageUrls((prev) => prev.filter((_, i) => i !== index));
       setFormData((prev) => ({
@@ -244,11 +243,11 @@ const PropertyCRUD = () => {
     }
   };
 
-  // Função para converter URL do YouTube em URL de embed
-  const getYoutubeEmbedUrl = (url: string) => {
+  // Youtube embed
+  const getYoutubeEmbedUrl = (url: string | null): string | null => {
+    // <-- CORREÇÃO: Aceita string ou null
     if (!url) return null;
     try {
-      // Suporta formatos: https://www.youtube.com/watch?v=ID e https://youtu.be/ID
       const u = new URL(url);
       let id = "";
       if (u.hostname.includes("youtu.be")) {
@@ -262,8 +261,8 @@ const PropertyCRUD = () => {
     }
   };
 
-  // Submit form
-  const handleSubmit = async () => {
+  // Submit
+  const handleSubmit = async (): Promise<void> => {
     try {
       setLoading(true);
       let finalImageUrls = [...imageUrls];
@@ -275,22 +274,25 @@ const PropertyCRUD = () => {
         setUploadingImages(false);
       }
 
-      // Garante que o ID da propriedade atual existe para a atualização
       if (modalMode === "edit" && !currentProperty) {
         throw new Error("ID da propriedade para edição não encontrado.");
       }
 
-      const propertyData = {
+      const propertyData: Property = {
+        // <-- CORREÇÃO: Tipagem explícita para Property
+        id: currentProperty?.id || 0, // Necessário para a interface Property
         title: formData.title,
         location: formData.location,
         price: formData.price,
-        bedrooms: parseInt(formData.bedrooms.toString()),
-        bathrooms: parseInt(formData.bathrooms.toString()),
-        area: parseFloat(formData.area.toString()),
+        bedrooms: formData.bedrooms,
+        bathrooms: formData.bathrooms,
+        area: formData.area,
         images: finalImageUrls,
         featured: formData.featured,
         description: formData.description,
-        youtube_video: formData.youtube_video || null,
+        youtube_video:
+          formData.youtube_video === "" ? null : formData.youtube_video, // <-- CORREÇÃO: Converte string vazia para null
+        created_at: currentProperty?.created_at || new Date().toISOString(), // Necessário para a interface Property
       };
 
       if (modalMode === "create") {
@@ -300,71 +302,59 @@ const PropertyCRUD = () => {
           .select();
 
         if (error) throw error;
-
-        // Otimista: se a inserção retornar dados, atualiza a lista
         if (data && data.length > 0) {
           setProperties((prev) => [data[0] as Property, ...prev]);
         }
       } else if (modalMode === "edit" && currentProperty) {
-        // Deletar imagens antigas que não estão mais no array
         const oldImages = currentProperty.images || [];
         const removedImages = oldImages.filter(
           (img) => !finalImageUrls.includes(img)
         );
-
         for (const imageUrl of removedImages) {
           await deleteImage(imageUrl);
         }
 
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from("properties")
           .update(propertyData)
           .eq("id", currentProperty.id)
           .select();
 
-        if (error) {
-          throw error;
-        }
+        if (error) throw error;
 
-        // CORREÇÃO: Atualizar o estado local da propriedade editada
         setProperties((prev) =>
-          prev.map((p) =>
-            p.id === currentProperty.id
-              ? { ...p, ...propertyData, id: p.id }
-              : p
+          prev.map(
+            (p) => (p.id === currentProperty.id ? propertyData : p) // <-- CORREÇÃO: Atribui diretamente propertyData que já é do tipo Property
           )
         );
       }
 
       closeModal();
       setError(null);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error("Erro ao salvar propriedade:", error.message);
-        setError("Erro ao salvar propriedade: " + error.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError("Erro ao salvar propriedade: " + err.message);
       } else {
-        console.error("Erro ao salvar propriedade:", error);
-        setError("Erro ao salvar propriedade: Ocorreu um erro desconhecido.");
+        setError("Erro ao salvar propriedade: erro desconhecido.");
       }
     } finally {
       setLoading(false);
       setUploadingImages(false);
     }
   };
-  // Delete property
-  const handleDelete = async (id: number) => {
+
+  // Delete
+  const handleDelete = async (id: number): Promise<void> => {
     if (!window.confirm("Tem certeza que deseja deletar esta propriedade?")) {
       return;
     }
 
     try {
       setLoading(true);
-
       const property = properties.find((p) => p.id === id);
 
       if (property?.images?.length) {
-        const images = property.images || [];
-        for (const imageUrl of images) {
+        for (const imageUrl of property.images) {
           await deleteImage(imageUrl);
         }
       }
@@ -375,19 +365,18 @@ const PropertyCRUD = () => {
 
       setProperties((prev) => prev.filter((p) => p.id !== id));
       setError(null);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error("Erro ao deletar propriedade:", error.message);
-        setError("Erro ao deletar propriedade: " + error.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError("Erro ao deletar propriedade: " + err.message);
       } else {
-        console.error("Erro ao deletar propriedade:", error);
-        setError("Erro ao deletar propriedade: Ocorreu um erro desconhecido.");
+        setError("Erro ao deletar propriedade: erro desconhecido.");
       }
     } finally {
       setLoading(false);
     }
   };
 
+  // aqui segue o JSX (igual ao que você mandou)
   return (
     <div
       className="min-h-screen bg-gray-50"
@@ -428,7 +417,7 @@ const PropertyCRUD = () => {
       {/* Error Alert */}
       {error && (
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             {error}
           </div>
         </div>
@@ -775,9 +764,7 @@ const PropertyCRUD = () => {
                   <input
                     type="url"
                     name="youtube_video"
-                    value={
-                      formData.youtube_video ? formData?.youtube_video : ""
-                    }
+                    value={formData.youtube_video}
                     onChange={handleInputChange}
                     disabled={modalMode === "view" || loading}
                     placeholder="https://www.youtube.com/watch?v=SEU_VIDEO_ID"
