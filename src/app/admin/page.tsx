@@ -43,7 +43,7 @@ interface PropertyFormData {
   images: string[];
   featured: boolean;
   description: string;
-  youtube_video: string; // <-- adicionando campo do vídeo
+  youtube_video: string | null; // <-- adicionando campo do vídeo
 }
 
 const PropertyCRUD = () => {
