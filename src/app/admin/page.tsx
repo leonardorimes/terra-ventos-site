@@ -775,7 +775,9 @@ const PropertyCRUD = () => {
                   <input
                     type="url"
                     name="youtube_video"
-                    value={formData.youtube_video}
+                    value={
+                      formData.youtube_video ? formData?.youtube_video : ""
+                    }
                     onChange={handleInputChange}
                     disabled={modalMode === "view" || loading}
                     placeholder="https://www.youtube.com/watch?v=SEU_VIDEO_ID"
