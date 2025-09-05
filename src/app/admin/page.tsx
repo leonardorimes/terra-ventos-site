@@ -695,7 +695,7 @@ const PropertyCRUD = () => {
                     disabled={modalMode === "view" || loading}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-opacity-50 disabled:bg-gray-100"
                   >
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
+                    {[0,1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
                       <option key={num} value={num}>
                         {num}
                       </option>
@@ -715,7 +715,7 @@ const PropertyCRUD = () => {
                     disabled={modalMode === "view" || loading}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-opacity-50 disabled:bg-gray-100"
                   >
-                    {[1, 2, 3, 4, 5, 6].map((num) => (
+                    {[0, 1, 2, 3, 4, 5, 6].map((num) => (
                       <option key={num} value={num}>
                         {num}
                       </option>
