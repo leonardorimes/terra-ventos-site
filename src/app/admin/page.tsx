@@ -30,7 +30,7 @@ interface Property {
   featured: boolean;
   description: string;
   created_at: string;
-  youtube_video?: string; // <-- adicionando campo do vídeo
+  youtube_video?: string | null; // <-- adicionando campo do vídeo
 }
 
 interface PropertyFormData {
